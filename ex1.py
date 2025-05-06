@@ -49,11 +49,19 @@ class PressurePlateProblem(search.Problem):
 
     def successor(self, state):
         """ Generates the successor states returns [(action, achieved_states, ...)]"""
-        # first thing - a lop that check for every UP DOWN LEFT RIGHT the all possible situtions
-        # the loop
-        # loop:
+        # first thing - check for every UP DOWN LEFT RIGHT the all possible situtions
+        new_states = []
+        for direction in ["R", "L", "U", "D"]:
+            possible_moves = self.helper_successor(state, direction)
+            new_states.extend(possible_moves)
+        return new_states
+    
+    def helper_successor(self, state , direction):
+        results = []
         # check for wrong cases - for better time run
         # case 1 - if the next step is out of the boundry of the metrix
+        
+        
         # case 2 - if the next step of the agent is to wall 
         # case 3 - if the agent next stop is to a "pressure plates"
         # case 4 - if the agent next stop is to a "key blocks" that have a "key block" after it or a wall
@@ -63,7 +71,8 @@ class PressurePlateProblem(search.Problem):
         # case 1 - the agent want to move to an empty place
         # case 2 - the agent want to push a "key block" and if we are here it is valid
         # case 3 - the agent push a "key block" and now it is on a pressure plates
-        utils.raiseNotDefined()
+        return results
+
 
     def goal_test(self, state):
         """ given a state, checks if this is the goal state, compares to the created goal state returns True/False"""
