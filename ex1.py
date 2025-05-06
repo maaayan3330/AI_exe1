@@ -38,6 +38,9 @@ class PressurePlateProblem(search.Problem):
                 # i will keep the goal for later
                 if placement == GOAL:
                     self.goal = (i,j)
+        # keep info for later
+        self.rows = len(self.map)
+        self.cols = len(self.map[0])
         # so far I just collect the all informetion and now i will add it to states
         initial_state = (agent_placement, tuple(sorted(key_blocks)))
         # note - I keep the first item in the initial_state to be = the agent = state[0]
@@ -46,6 +49,20 @@ class PressurePlateProblem(search.Problem):
 
     def successor(self, state):
         """ Generates the successor states returns [(action, achieved_states, ...)]"""
+        # first thing - a lop that check for every UP DOWN LEFT RIGHT the all possible situtions
+        # the loop
+        # loop:
+        # check for wrong cases - for better time run
+        # case 1 - if the next step is out of the boundry of the metrix
+        # case 2 - if the next step of the agent is to wall 
+        # case 3 - if the agent next stop is to a "pressure plates"
+        # case 4 - if the agent next stop is to a "key blocks" that have a "key block" after it or a wall
+        # case 5 - if the agent next stop is to a locked door
+
+        # check now for good cases to insert to the states
+        # case 1 - the agent want to move to an empty place
+        # case 2 - the agent want to push a "key block" and if we are here it is valid
+        # case 3 - the agent push a "key block" and now it is on a pressure plates
         utils.raiseNotDefined()
 
     def goal_test(self, state):
