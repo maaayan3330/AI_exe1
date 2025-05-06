@@ -20,12 +20,29 @@ class PressurePlateProblem(search.Problem):
     """This class implements a pressure plate problem"""
 
     def __init__(self, initial):
-
-        self.map = initial
-
+        # keep the metrix in self.map that it will be for all the functions
         """ Constructor only needs the initial state.
         Don't forget to set the goal or implement the goal test"""
-        search.Problem.__init__(self, initial)
+        # initial - the all metrix
+        self.map = initial
+        # I want to pass the constructor not the all netrix just the - initial stats
+        agent_placement = None
+        key_blocks = []
+        for i, row in enumerate(initial):
+            for j, placement in enumerate(row):
+                if placement == AGENT:
+                    agent_placement = (i,j)
+                if placement >= 10 and placement <= 19:
+                    # i keep the placement of the cube and its number
+                    key_blocks.append((i,j,placement))
+                # i will keep the goal for later
+                if placement == GOAL:
+                    self.goal = (i,j)
+        # so far I just collect the all informetion and now i will add it to states
+        initial_state = (agent_placement, tuple(sorted(key_blocks)))
+        # note - I keep the first item in the initial_state to be = the agent = state[0]
+        search.Problem.__init__(self, initial_state)
+
 
     def successor(self, state):
         """ Generates the successor states returns [(action, achieved_states, ...)]"""
@@ -33,7 +50,8 @@ class PressurePlateProblem(search.Problem):
 
     def goal_test(self, state):
         """ given a state, checks if this is the goal state, compares to the created goal state returns True/False"""
-        utils.raiseNotDefined()
+        # i want to check if agent is on goal
+        return state[0] == self.goal
 
     def h(self, node):
         """ This is the heuristic. It gets a node (not a state)
