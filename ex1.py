@@ -14,6 +14,11 @@ GOAL = 2
 # PRESSED_PLATES = [30,...,39]
 # PRESSURE_PLATES = [20,...,29]
 # KEY_BLOCKS = [10,...,19]
+LOCKED_DOORS = list(range(40, 50))
+PRESSED_PLATES = list(range(30, 40))
+PRESSURE_PLATES = list(range(20, 30))
+KEY_BLOCKS = list(range(10, 20))
+
 
 
 class PressurePlateProblem(search.Problem):
@@ -58,20 +63,71 @@ class PressurePlateProblem(search.Problem):
     
     def helper_successor(self, state , direction):
         results = []
-        # check for wrong cases - for better time run
+        ##### check for wrong cases - for better time run : #####
         # case 1 - if the next step is out of the boundry of the metrix
-        
-        
+        if not self.out_of_boundry(state, direction):
+            return results
         # case 2 - if the next step of the agent is to wall 
+        if self.next_move_wall(state, direction):
+            return results
         # case 3 - if the agent next stop is to a "pressure plates"
         # case 4 - if the agent next stop is to a "key blocks" that have a "key block" after it or a wall
         # case 5 - if the agent next stop is to a locked door
+        # case 6 - if the Agent push a "key block" on a "pressure plates" that not belong to him
+        # case 7 - if the agent next move is to an "pressure plates"
 
-        # check now for good cases to insert to the states
+        # check now for good cases to insert to the states :
         # case 1 - the agent want to move to an empty place
-        # case 2 - the agent want to push a "key block" and if we are here it is valid
-        # case 3 - the agent push a "key block" and now it is on a pressure plates
+        # case 2 - the agent want to push a "key block" and it is valid (it mean there is no wall/key block after the one he want to push)
+
+        # check for good cases that need a special update
+        # case 1 - the agent push a "key block" and now it is on a pressure plates 
+        
+
+        ##################################### תחשבי אם כיסת את המצב של אםם זה אזור לחוץ כבר
         return results
+    # helpper functions for helper seccessor
+    # case 1 
+    def out_of_boundry(self, state, direction):
+        row_of_agent , col_of_agent = state[0]
+        if direction == "R":
+            return col_of_agent + 1 < self.cols
+        elif direction == "L":
+            return col_of_agent - 1 >= 0
+        elif direction == "U":
+            return row_of_agent - 1 >= 0
+        elif direction == "D":
+            return row_of_agent + 1 < self.rows
+        # out of boundry
+        return False
+    
+    # case 2 
+    def next_move_wall(self, state, direction):
+        row_of_agent , col_of_agent = state[0]
+        if direction == "R":
+            return self.map[row_of_agent][col_of_agent + 1] == WALL
+        elif direction == "L":
+            return self.map[row_of_agent][col_of_agent - 1] == WALL
+        elif direction == "U":
+            return self.map[row_of_agent - 1][col_of_agent] == WALL
+        elif direction == "D":
+            return self.map[row_of_agent + 1][col_of_agent] == WALL
+        return False
+
+    # case 3
+    def next_move_pressure_plates(self, state, direction):
+        row_of_agent , col_of_agent = state[0]
+        if direction == "R":
+            return self.map[row_of_agent][col_of_agent + 1] == 
+        elif direction == "L":
+            return self.map[row_of_agent][col_of_agent - 1] == WALL
+        elif direction == "U":
+            return self.map[row_of_agent - 1][col_of_agent] == WALL
+        elif direction == "D":
+            return self.map[row_of_agent + 1][col_of_agent] == WALL
+        return False
+
+
 
 
     def goal_test(self, state):
