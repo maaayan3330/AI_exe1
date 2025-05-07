@@ -58,9 +58,8 @@ class PressurePlateProblem(search.Problem):
         self.pressure_plate_counts = self.count_by_type(self.map, PRESSURE_PLATES)
         # keep the num of "pressure plates"
         self.key_block_counts = self.count_by_type(self.map, KEY_BLOCKS)
-
-
-        
+        # keep 
+        self.door_requirements = self.count_doors_and_required_plates(self.map)
         # so far I just collect the all informetion and now i will add it to states
         initial_state = (agent_placement, tuple(sorted(key_blocks)))
         # note - I keep the first item in the initial_state to be = the agent = state[0]
@@ -73,12 +72,24 @@ class PressurePlateProblem(search.Problem):
             for cell in row:
                 if cell in valid_range:
                     block_type = cell % 10
-                if block_type in counter:
-                    counter[block_type] += 1
-                else:
-                    counter[block_type] = 1
-        return sorted([(k, counter[k]) for k in counter])
+                    counter[block_type] = counter.get(block_type, 0) + 1
+        return counter
 
+    # to keep track of the doors
+    def count_doors_and_required_plates(self, matrix):
+        plate_counter = {}
+        door_counter = {}
+
+        for row in matrix:
+            for cell in row:
+                if cell in PRESSURE_PLATES:
+                    plate_type = cell % 10
+                    plate_counter[plate_type] = plate_counter.get(plate_type, 0) + 1
+                elif cell in LOCKED_DOORS:
+                    door_type = cell % 10
+                    door_counter[door_type] = door_counter.get(door_type, 0) + 1
+
+        return {door_type: plate_counter.get(door_type, 0) for door_type in door_counter}
 
 
     def successor(self, state):
@@ -107,7 +118,9 @@ class PressurePlateProblem(search.Problem):
         if self.push_block_invalid(state, direction):
             return results
         # case 5 - if the agent next stop is to a locked door
-        # case 7 - if the agent next move is to an "pressure plates"
+        if self.locked_door(state, direction):
+            return results
+        # case 6 - if the agent next move is to a "pressure plates"
 
         # check now for good cases to insert to the states :
         # case 1 - the agent want to move to an empty place
@@ -191,6 +204,20 @@ class PressurePlateProblem(search.Problem):
                     return True
         # it is all good
         return False
+
+    # case 5
+    def locked_door(self, state, direction):
+        row_of_agent , col_of_agent = state[0]
+        direction_row, direction_col = DIRECTIONS[direction]
+
+        if self.map[row_of_agent + direction_row][col_of_agent + direction_col] in LOCKED_DOORS:
+            # now i will do a check if the door is free to go or not
+            type_door = (self.map[row_of_agent + direction_row][col_of_agent + direction_col]) % 10
+            if self.door_requirements.get(type_door, 0) > 0 :
+                # the door is locekd
+                return True
+        return False
+            
 
     def goal_test(self, state):
         """ given a state, checks if this is the goal state, compares to the created goal state returns True/False"""
