@@ -19,6 +19,14 @@ PRESSED_PLATES = list(range(30, 40))
 PRESSURE_PLATES = list(range(20, 30))
 KEY_BLOCKS = list(range(10, 20))
 
+# help with the drections
+DIRECTIONS = {
+    "R": (0, 1),
+    "L": (0, -1),
+    "U": (-1, 0),
+    "D": (1, 0)
+}
+
 
 
 class PressurePlateProblem(search.Problem):
@@ -37,19 +45,40 @@ class PressurePlateProblem(search.Problem):
             for j, placement in enumerate(row):
                 if placement == AGENT:
                     agent_placement = (i,j)
-                if placement >= 10 and placement <= 19:
+                if placement in KEY_BLOCKS:
                     # i keep the placement of the cube and its number
-                    key_blocks.append((i,j,placement))
+                    key_blocks.append((i,j,placement - 10))
                 # i will keep the goal for later
                 if placement == GOAL:
                     self.goal = (i,j)
         # keep info for later
         self.rows = len(self.map)
         self.cols = len(self.map[0])
+        # keep the num of "pressure plates"
+        self.pressure_plate_counts = self.count_by_type(self.map, PRESSURE_PLATES)
+        # keep the num of "pressure plates"
+        self.key_block_counts = self.count_by_type(self.map, KEY_BLOCKS)
+
+
+        
         # so far I just collect the all informetion and now i will add it to states
         initial_state = (agent_placement, tuple(sorted(key_blocks)))
         # note - I keep the first item in the initial_state to be = the agent = state[0]
         search.Problem.__init__(self, initial_state)
+
+    # this function is to keep the data i need
+    def count_by_type(self, matrix, valid_range):
+        counter = {}
+        for row in matrix:
+            for cell in row:
+                if cell in valid_range:
+                    block_type = cell % 10
+                if block_type in counter:
+                    counter[block_type] += 1
+                else:
+                    counter[block_type] = 1
+        return sorted([(k, counter[k]) for k in counter])
+
 
 
     def successor(self, state):
@@ -71,9 +100,13 @@ class PressurePlateProblem(search.Problem):
         if self.next_move_wall(state, direction):
             return results
         # case 3 - if the agent next stop is to a "pressure plates"
+        if self.next_move_pressure_plates(state, direction):
+            return results
         # case 4 - if the agent next stop is to a "key blocks" that have a "key block" after it or a wall
+        # *cube after cube | *wall after cube | *worng pressuer number 
+        if self.push_block_invalid(state, direction):
+            return results
         # case 5 - if the agent next stop is to a locked door
-        # case 6 - if the Agent push a "key block" on a "pressure plates" that not belong to him
         # case 7 - if the agent next move is to an "pressure plates"
 
         # check now for good cases to insert to the states :
@@ -118,17 +151,46 @@ class PressurePlateProblem(search.Problem):
     def next_move_pressure_plates(self, state, direction):
         row_of_agent , col_of_agent = state[0]
         if direction == "R":
-            return self.map[row_of_agent][col_of_agent + 1] == 
+            if self.map[row_of_agent][col_of_agent + 1] in PRESSURE_PLATES: 
+                return True
         elif direction == "L":
-            return self.map[row_of_agent][col_of_agent - 1] == WALL
+            if self.map[row_of_agent][col_of_agent - 1] in PRESSURE_PLATES: 
+                return True
         elif direction == "U":
-            return self.map[row_of_agent - 1][col_of_agent] == WALL
+            if self.map[row_of_agent - 1][col_of_agent] in PRESSURE_PLATES: 
+                return True
         elif direction == "D":
-            return self.map[row_of_agent + 1][col_of_agent] == WALL
+            if self.map[row_of_agent + 1][col_of_agent] in PRESSURE_PLATES: 
+                return True
         return False
 
+    # case 4
+    def push_block_invalid(self, state, direction):
+        row_of_agent , col_of_agent = state[0]
+        direction_row, direction_col = DIRECTIONS[direction]
 
-
+        # first check if the move push a cube
+        if self.map[row_of_agent + direction_row][col_of_agent + direction_col] in KEY_BLOCKS:
+            # first check if the placement after it is in the bounderis
+            one_step_row , one_step_col = (row_of_agent + direction_row + direction_row), (col_of_agent + direction_col + direction_col)
+            if not (0 <= one_step_row < self.rows and 0 <= one_step_col < self.cols):
+                # the next step is out of bounderies for ROW and COL
+                return True
+            # so it is in boundry - check if there is a cube after it
+            if self.map[one_step_row][one_step_col] in KEY_BLOCKS:
+                return True
+            # check if there is a wall after it
+            if self.map[one_step_row][one_step_col] ==  WALL:
+                return True
+            # check if we push it to a wring pressure
+            if self.map[one_step_row][one_step_col] in PRESSURE_PLATES:
+                plate_pressure = self.map[one_step_row][one_step_col]
+                key_block = self.map[row_of_agent + direction_row][col_of_agent + direction_col]
+                if (plate_pressure % 10) != (key_block % 10):
+                    # they have diffrent numbers 
+                    return True
+        # it is all good
+        return False
 
     def goal_test(self, state):
         """ given a state, checks if this is the goal state, compares to the created goal state returns True/False"""
