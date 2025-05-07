@@ -134,10 +134,30 @@ class PressurePlateProblem(search.Problem):
             key_blocks = state[1]
             new_state = (new_agent_placement, key_blocks)
             results.append((direction, new_state))
-        # case 2 - the agent want to push a "key block" and it is valid (it mean there is no wall/key block after the one he want to push) - we cannn push!!
+        # case 2 - the agent want to push a "key block" to FLOOR and it is valid (it mean there is no wall/key block after the one he want to push) - we cannn push!!
+        if self.map[row_of_agent + direction_row + 1][col_of_agent + direction_col + 1] == FLOOR:
+            key_blocks = list(state[1])
+            key_type = self.map[row_of_agent + direction_row][col_of_agent + direction_col] - 10
+
+            # remove the position of the old cube
+            key_blocks.remove((row_of_agent + direction_row, col_of_agent + direction_col, key_type))
+
+            # add it to the new position
+            key_blocks.append((row_of_agent + 2 * direction_row, col_of_agent + 2 * direction_col, key_type))
+
+            new_state = ((row_of_agent + direction_row, col_of_agent + direction_col),tuple(sorted(key_blocks)))
+            results.append((direction, new_state))
+
 
         # check for good cases that need a special update
         # case 1 - the agent push a "key block" and now it is on a pressure plates 
+        # check what type of the  "key" we have
+
+        # check if we push to the right pressure plates
+
+        # to reduce 1 from the type door and check if to change it to floor + if it is the same type nakt it a wall
+
+
         
 
         ##################################### תחשבי אם כיסת את המצב של אםם זה אזור לחוץ כבר
