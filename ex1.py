@@ -134,8 +134,9 @@ class PressurePlateProblem(search.Problem):
             key_blocks = state[1]
             new_state = (new_agent_placement, key_blocks)
             results.append((direction, new_state))
+            return results
         # case 2 - the agent want to push a "key block" to FLOOR and it is valid (it mean there is no wall/key block after the one he want to push) - we cannn push!!
-        if self.map[row_of_agent + direction_row + 1][col_of_agent + direction_col + 1] == FLOOR:
+        if self.map[row_of_agent + direction_row][col_of_agent + direction_col] in KEY_BLOCKS:
             key_blocks = list(state[1])
             key_type = self.map[row_of_agent + direction_row][col_of_agent + direction_col] - 10
 
@@ -147,15 +148,42 @@ class PressurePlateProblem(search.Problem):
 
             new_state = ((row_of_agent + direction_row, col_of_agent + direction_col),tuple(sorted(key_blocks)))
             results.append((direction, new_state))
+            return results
 
+        # case 3 - the agent push a "key block" and now it is on a pressure plates 
+        # check if the next is a cube
+        if self.map[row_of_agent + direction_row][col_of_agent + direction_col] in KEY_BLOCKS:  
+            key_blocks = list(state[1])
+            # keep the num 
+            key_type = self.map[row_of_agent + direction_row][col_of_agent + direction_col] - 10
+            # check if there is a pressure plate
+            if self.map[row_of_agent + direction_row * 2 ][col_of_agent + direction_col * 2] in PRESSURE_PLATES:
+                pressure_type = (self.map[row_of_agent + direction_row * 2][col_of_agent + direction_col * 2]) % 10
+                # if it is a correct push
+                if key_type == pressure_type:
+                    # reduce a num for door in the same type! if it = 0 remove the door and make it empty space! 
+                    self.door_requirements[key_type] -= 1
+                    # if it 0 
+                    if self.door_requirements[key_type] == 0:
+                        for i in range(self.rows):
+                            for j in range(self.cols):
+                                if self.map[i][j] == 40 + key_type:
+                                    # make it a floor
+                                    self.map[i][j] = FLOOR
+                        # remove the door from list'
+                        del self.door_requirements[key_type]
+                    # make it a wall
+                    self.map[row_of_agent + direction_row * 2][col_of_agent + direction_col * 2] = WALL
+                    # remove the key_block from state
+                    key_blocks.remove((row_of_agent + direction_row, col_of_agent + direction_col, key_type))
+                    # update the agen placment 
+                    new_agent_placement = (row_of_agent + direction_row, col_of_agent + direction_col)
+                    # update the all stste
+                    new_state = (new_agent_placement, tuple(sorted(key_blocks)))
+                    results.append((direction, new_state))
+                    return results
+            return results
 
-        # check for good cases that need a special update
-        # case 1 - the agent push a "key block" and now it is on a pressure plates 
-        # check what type of the  "key" we have
-
-        # check if we push to the right pressure plates
-
-        # to reduce 1 from the type door and check if to change it to floor + if it is the same type nakt it a wall
 
 
         
