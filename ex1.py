@@ -114,17 +114,27 @@ class PressurePlateProblem(search.Problem):
         if self.next_move_pressure_plates(state, direction):
             return results
         # case 4 - if the agent next stop is to a "key blocks" that have a "key block" after it or a wall
-        # *cube after cube | *wall after cube | *worng pressuer number 
+        # *cube after cube | *wall after cube | *worng pressuer number | *push a cube and its go behond the boundery
         if self.push_block_invalid(state, direction):
             return results
         # case 5 - if the agent next stop is to a locked door
         if self.locked_door(state, direction):
             return results
-        # case 6 - if the agent next move is to a "pressure plates"
+        
 
         # check now for good cases to insert to the states :
+        row_of_agent , col_of_agent = state[0]
+        direction_row, direction_col = DIRECTIONS[direction]
+
         # case 1 - the agent want to move to an empty place
-        # case 2 - the agent want to push a "key block" and it is valid (it mean there is no wall/key block after the one he want to push)
+        if self.map[row_of_agent + direction_row][col_of_agent + direction_col] == FLOOR:
+            # keep the new placment of the agen
+            new_agent_placement = (row_of_agent + direction_row, col_of_agent + direction_col)
+            # keep the all info about the "key blockes"
+            key_blocks = state[1]
+            new_state = (new_agent_placement, key_blocks)
+            results.append((direction, new_state))
+        # case 2 - the agent want to push a "key block" and it is valid (it mean there is no wall/key block after the one he want to push) - we cannn push!!
 
         # check for good cases that need a special update
         # case 1 - the agent push a "key block" and now it is on a pressure plates 
@@ -195,7 +205,7 @@ class PressurePlateProblem(search.Problem):
             # check if there is a wall after it
             if self.map[one_step_row][one_step_col] ==  WALL:
                 return True
-            # check if we push it to a wring pressure
+            # check if we push it to a wrong pressure
             if self.map[one_step_row][one_step_col] in PRESSURE_PLATES:
                 plate_pressure = self.map[one_step_row][one_step_col]
                 key_block = self.map[row_of_agent + direction_row][col_of_agent + direction_col]
@@ -217,7 +227,7 @@ class PressurePlateProblem(search.Problem):
                 # the door is locekd
                 return True
         return False
-            
+
 
     def goal_test(self, state):
         """ given a state, checks if this is the goal state, compares to the created goal state returns True/False"""
