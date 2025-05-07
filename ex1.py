@@ -285,7 +285,12 @@ class PressurePlateProblem(search.Problem):
     def h(self, node):
         """ This is the heuristic. It gets a node (not a state)
         and returns a goal distance estimate"""
-        utils.raiseNotDefined()
+        """Simple heuristic: Manhattan distance from agent to goal"""
+        agent_pos = node.state[0]
+        goal_pos = self.goal
+
+        return abs(agent_pos[0] - goal_pos[0]) + abs(agent_pos[1] - goal_pos[1])
+
 
 
 def create_pressure_plate_problem(game):
