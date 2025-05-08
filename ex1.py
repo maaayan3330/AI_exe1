@@ -136,24 +136,25 @@ class PressurePlateProblem(search.Problem):
         # case 1 - the agent want to move to an empty place
         if map_for_state[one_move_row][one_move_col] == FLOOR:
             # keep the new placment of the agen
-            new_agent_placement = (row_of_agent + direction_row, col_of_agent + direction_col)
+            new_agent_placement = (one_move_row, one_move_col)
             # keep the all info about the "key blockes"
             new_state = (new_agent_placement, key_blocks, frozenset(open_doors), plates_covered)
             results.append((direction, new_state))
-           
             return results
+        
         # case 2 - the agent want to push a "key block" to FLOOR and it is valid (it mean there is no wall/key block after the one he want to push) - we cannn push!!
         if map_for_state[one_move_row][one_move_col] in KEY_BLOCKS:
             if map_for_state[two_move_row][two_move_col] == FLOOR:
-                key_type = map_for_state[one_move_row][one_move_col] - 10
-                # remove the position of the old cube
-                key_blocks.remove((one_move_row, one_move_col, key_type))
-                # add it to the new position
-                key_blocks.append((two_move_row, two_move_col, key_type))
-                # update all
-                new_state = ((one_move_row, one_move_col) ,tuple(sorted(key_blocks)), frozenset(open_doors), plates_covered)
-                results.append((direction, new_state))
-                return results
+                key_type = (map_for_state[one_move_row][one_move_col]) % 10
+                if (one_move_row, one_move_col, key_type) in key_blocks:
+                    # remove the position of the old cube
+                    key_blocks.remove((one_move_row, one_move_col, key_type))
+                    # add it to the new position
+                    key_blocks.append((two_move_row, two_move_col, key_type))
+                    # update all
+                    new_state = ((one_move_row, one_move_col), tuple(sorted(key_blocks)), frozenset(open_doors), plates_covered)
+                    results.append((direction, new_state))
+                    return results
 
         # case 3 - the agent push a "key block" and now it is on a pressure plates 
         # check if the next is a cube
