@@ -58,10 +58,8 @@ class PressurePlateProblem(search.Problem):
         self.pressure_plate_counts = self.count_by_type(self.map, PRESSURE_PLATES)
         # keep the num of "pressure plates"
         self.key_block_counts = self.count_by_type(self.map, KEY_BLOCKS)
-        # keep 
-        self.door_requirements = self.count_doors_and_required_plates(self.map)
-        # so far I just collect the all informetion and now i will add it to states
-        initial_state = (agent_placement, tuple(sorted(key_blocks)))
+        # so far I just collect the all informetion and now i will add it to states - frozenset - no open door in the beging
+        initial_state = (agent_placement, tuple(sorted(key_blocks)),frozenset())
         # note - I keep the first item in the initial_state to be = the agent = state[0]
         search.Problem.__init__(self, initial_state)
 
@@ -75,6 +73,23 @@ class PressurePlateProblem(search.Problem):
                     counter[block_type] = counter.get(block_type, 0) + 1
         return counter
 
+    # to copy to each state the map that relevnt for him 
+    def get_effective_map(self, state):
+        agent_pos, key_blocks, open_doors = state
+        map_copy = [list(row) for row in self.map]
+        for i in range(self.rows):
+            for j in range(self.cols):
+                cell = map_copy[i][j]
+                if cell in LOCKED_DOORS and (cell % 10) in open_doors:
+                    map_copy[i][j] = FLOOR
+        for r, c, t in key_blocks:
+            cell = map_copy[r][c]
+            if cell in PRESSURE_PLATES and (cell % 10) == t:
+                map_copy[r][c] = WALL
+            else:
+                map_copy[r][c] = 10 + t
+        return map_copy 
+    
     # to keep track of the doors
     def count_doors_and_required_plates(self, matrix):
         plate_counter = {}
@@ -103,6 +118,8 @@ class PressurePlateProblem(search.Problem):
     
     def helper_successor(self, state , direction):
         results = []
+        # the corrent map
+        map_ = self.get_effective_map(state)
         ##### check for wrong cases - for better time run : #####
         # case 1 - if the next step is out of the boundry of the metrix
         if not self.out_of_boundry(state, direction):
