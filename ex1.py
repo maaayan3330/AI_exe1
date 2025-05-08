@@ -239,6 +239,7 @@ class PressurePlateProblem(search.Problem):
         cell = new_map[row_of_agent + direction_row][col_of_agent + direction_col]
         open_doors = state[2]
 
+        # tri to enter a door and it locked - not in open doors
         if cell in LOCKED_DOORS and (cell % 10) not in open_doors:
             return True
         return False
