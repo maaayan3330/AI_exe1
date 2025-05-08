@@ -56,10 +56,8 @@ class PressurePlateProblem(search.Problem):
         self.cols = len(self.map[0])
         # keep the num of "pressure plates"
         self.pressure_plate_counts = self.count_by_type(self.map, PRESSURE_PLATES)
-        # keep the num of "pressure plates"
-        self.key_block_counts = self.count_by_type(self.map, KEY_BLOCKS)
-        # so far I just collect the all informetion and now i will add it to states - frozenset - no open door in the beging
-        initial_state = (agent_placement, tuple(sorted(key_blocks)),frozenset())
+        # so far I just collect the all informetion and now i will add it to states - frozenset - no open door in the beging , plated coverd
+        initial_state = (agent_placement, tuple(sorted(key_blocks)),frozenset(), {})
         # note - I keep the first item in the initial_state to be = the agent = state[0]
         search.Problem.__init__(self, initial_state)
 
@@ -75,11 +73,12 @@ class PressurePlateProblem(search.Problem):
 
     # to copy to each state the map that relevnt for him 
     def get_effective_map(self, state):
-        agent_pos, key_blocks, open_doors = state
+        agent_pos, key_blocks, open_doors , _= state
         map_copy = [list(row) for row in self.map]
         for i in range(self.rows):
             for j in range(self.cols):
                 cell = map_copy[i][j]
+                # if the cell is a open door
                 if cell in LOCKED_DOORS and (cell % 10) in open_doors:
                     map_copy[i][j] = FLOOR
         for r, c, t in key_blocks:
@@ -90,22 +89,6 @@ class PressurePlateProblem(search.Problem):
                 map_copy[r][c] = 10 + t
         return map_copy 
     
-    # to keep track of the doors
-    def count_doors_and_required_plates(self, matrix):
-        plate_counter = {}
-        door_counter = {}
-
-        for row in matrix:
-            for cell in row:
-                if cell in PRESSURE_PLATES:
-                    plate_type = cell % 10
-                    plate_counter[plate_type] = plate_counter.get(plate_type, 0) + 1
-                elif cell in LOCKED_DOORS:
-                    door_type = cell % 10
-                    door_counter[door_type] = door_counter.get(door_type, 0) + 1
-
-        return {door_type: plate_counter.get(door_type, 0) for door_type in door_counter}
-
 
     def successor(self, state):
         """ Generates the successor states returns [(action, achieved_states, ...)]"""
@@ -119,159 +102,129 @@ class PressurePlateProblem(search.Problem):
     def helper_successor(self, state , direction):
         results = []
         # the corrent map
-        map_ = self.get_effective_map(state)
+        map_for_state = self.get_effective_map(state)
         ##### check for wrong cases - for better time run : #####
         # case 1 - if the next step is out of the boundry of the metrix
         if not self.out_of_boundry(state, direction):
             return results
         # case 2 - if the next step of the agent is to wall 
-        if self.next_move_wall(state, direction):
+        if self.next_move_wall(state, direction, map_for_state):
             return results
         # case 3 - if the agent next stop is to a "pressure plates"
-        if self.next_move_pressure_plates(state, direction):
+        if self.next_move_pressure_plates(state, direction, map_for_state):
             return results
         # case 4 - if the agent next stop is to a "key blocks" that have a "key block" after it or a wall
-        # *cube after cube | *wall after cube | *worng pressuer number | *push a cube and its go behond the boundery
-        if self.push_block_invalid(state, direction):
+        # *cube after cube | *wall after cube | *worng pressuer number after cube | *push a cube and its go behond the boundery
+        if self.push_block_invalid(state, direction, map_for_state):
             return results
         # case 5 - if the agent next stop is to a locked door
-        if self.locked_door(state, direction):
+        if self.locked_door(state, direction, map_for_state):
             return results
         
 
         # check now for good cases to insert to the states :
         row_of_agent , col_of_agent = state[0]
         direction_row, direction_col = DIRECTIONS[direction]
+        key_blocks = list(state[1])
+        open_doors = set(state[2])
+        plates_covered = dict(state[3])
+
+        one_move_row, one_move_col = row_of_agent + direction_row, col_of_agent + direction_col
+        two_move_row, two_move_col = row_of_agent + 2 * direction_row, col_of_agent + 2 * direction_col
+
 
         # case 1 - the agent want to move to an empty place
-        if self.map[row_of_agent + direction_row][col_of_agent + direction_col] == FLOOR:
+        if map_for_state[one_move_row][one_move_col] == FLOOR:
             # keep the new placment of the agen
             new_agent_placement = (row_of_agent + direction_row, col_of_agent + direction_col)
             # keep the all info about the "key blockes"
-            key_blocks = state[1]
-            new_state = (new_agent_placement, key_blocks)
+            new_state = (new_agent_placement, key_blocks, frozenset(open_doors), plates_covered)
             results.append((direction, new_state))
+           
             return results
         # case 2 - the agent want to push a "key block" to FLOOR and it is valid (it mean there is no wall/key block after the one he want to push) - we cannn push!!
-        if self.map[row_of_agent + direction_row][col_of_agent + direction_col] in KEY_BLOCKS:
-            if self.map[row_of_agent + direction_row * 2][col_of_agent + direction_col * 2] == FLOOR:
-                key_blocks = list(state[1])
-                key_type = self.map[row_of_agent + direction_row][col_of_agent + direction_col] - 10
-
+        if map_for_state[one_move_row][one_move_col] in KEY_BLOCKS:
+            if map_for_state[two_move_row][two_move_col] == FLOOR:
+                key_type = map_for_state[one_move_row][one_move_col] - 10
                 # remove the position of the old cube
-                key_blocks.remove((row_of_agent + direction_row, col_of_agent + direction_col, key_type))
-
+                key_blocks.remove((one_move_row, one_move_col, key_type))
                 # add it to the new position
-                key_blocks.append((row_of_agent + 2 * direction_row, col_of_agent + 2 * direction_col, key_type))
-
-                new_state = ((row_of_agent + direction_row, col_of_agent + direction_col),tuple(sorted(key_blocks)))
+                key_blocks.append((two_move_row, two_move_col, key_type))
+                # update all
+                new_state = ((one_move_row, one_move_col) ,tuple(sorted(key_blocks)), frozenset(open_doors), plates_covered)
                 results.append((direction, new_state))
                 return results
 
         # case 3 - the agent push a "key block" and now it is on a pressure plates 
         # check if the next is a cube
-        if self.map[row_of_agent + direction_row][col_of_agent + direction_col] in KEY_BLOCKS:  
-            key_blocks = list(state[1])
+        if map_for_state[one_move_row][one_move_col] in KEY_BLOCKS:  
             # keep the num 
-            key_type = self.map[row_of_agent + direction_row][col_of_agent + direction_col] - 10
+            key_type = (map_for_state[one_move_row][one_move_col]) % 10
             # check if there is a pressure plate
-            if self.map[row_of_agent + direction_row * 2 ][col_of_agent + direction_col * 2] in PRESSURE_PLATES:
-                pressure_type = (self.map[row_of_agent + direction_row * 2][col_of_agent + direction_col * 2]) % 10
+            if map_for_state[two_move_row][two_move_col] in PRESSURE_PLATES:
+                pressure_type = (map_for_state[two_move_row][two_move_col]) % 10
                 # if it is a correct push
                 if key_type == pressure_type:
-                    # reduce a num for door in the same type! if it = 0 remove the door and make it empty space! 
-                    self.door_requirements[key_type] -= 1
-                    # if it 0 
-                    if self.door_requirements[key_type] == 0:
-                        for i in range(self.rows):
-                            for j in range(self.cols):
-                                if self.map[i][j] == 40 + key_type:
-                                    # make it a floor
-                                    self.map[i][j] = FLOOR
-                        # remove the door from list'
-                        del self.door_requirements[key_type]
-                    # make it a wall
-                    self.map[row_of_agent + direction_row * 2][col_of_agent + direction_col * 2] = WALL
-                    # remove the key_block from state
-                    key_blocks.remove((row_of_agent + direction_row, col_of_agent + direction_col, key_type))
-                    # update the agen placment 
-                    new_agent_placement = (row_of_agent + direction_row, col_of_agent + direction_col)
-                    # update the all stste
-                    new_state = (new_agent_placement, tuple(sorted(key_blocks)))
+                    # we coverd one more so we will keep it
+                    plates_covered[key_type] = plates_covered.get(key_type, 0) + 1
+                    # now maybe we open a door 
+                    if plates_covered[key_type] == self.pressure_plate_counts[key_type]:
+                            open_doors.add(key_type)
+                    # remove the placment of the cube becuse we did a move
+                    key_blocks.remove((one_move_row, one_move_col, key_type))
+                    new_agent_placement = (one_move_row, one_move_col)
+                    new_state = (new_agent_placement, tuple(sorted(key_blocks)), frozenset(open_doors), dict(plates_covered))
                     results.append((direction, new_state))
                     return results
-            return results
+                
+        return results
 
 
         ##################################### תחשבי אם כיסת את המצב של אםם זה אזור לחוץ כבר
-        return results
+    
     # helpper functions for helper seccessor
     # case 1 
     def out_of_boundry(self, state, direction):
         row_of_agent , col_of_agent = state[0]
-        if direction == "R":
-            return col_of_agent + 1 < self.cols
-        elif direction == "L":
-            return col_of_agent - 1 >= 0
-        elif direction == "U":
-            return row_of_agent - 1 >= 0
-        elif direction == "D":
-            return row_of_agent + 1 < self.rows
-        # out of boundry
-        return False
+        direction_row, direction_col = DIRECTIONS[direction]
+        return 0 <= row_of_agent + direction_row < self.rows and 0 <= col_of_agent + direction_col < self.cols
     
     # case 2 
-    def next_move_wall(self, state, direction):
+    def next_move_wall(self, state, direction, new_map):
         row_of_agent , col_of_agent = state[0]
-        if direction == "R":
-            return self.map[row_of_agent][col_of_agent + 1] == WALL
-        elif direction == "L":
-            return self.map[row_of_agent][col_of_agent - 1] == WALL
-        elif direction == "U":
-            return self.map[row_of_agent - 1][col_of_agent] == WALL
-        elif direction == "D":
-            return self.map[row_of_agent + 1][col_of_agent] == WALL
-        return False
+        direction_row, direction_col = DIRECTIONS[direction]
+        return new_map[row_of_agent + direction_row][col_of_agent + direction_col] == WALL
 
     # case 3
-    def next_move_pressure_plates(self, state, direction):
+    def next_move_pressure_plates(self, state, direction, new_map):
         row_of_agent , col_of_agent = state[0]
-        if direction == "R":
-            if self.map[row_of_agent][col_of_agent + 1] in PRESSURE_PLATES: 
-                return True
-        elif direction == "L":
-            if self.map[row_of_agent][col_of_agent - 1] in PRESSURE_PLATES: 
-                return True
-        elif direction == "U":
-            if self.map[row_of_agent - 1][col_of_agent] in PRESSURE_PLATES: 
-                return True
-        elif direction == "D":
-            if self.map[row_of_agent + 1][col_of_agent] in PRESSURE_PLATES: 
-                return True
-        return False
+        direction_row, direction_col = DIRECTIONS[direction]
+        return new_map[row_of_agent + direction_row][col_of_agent + direction_col] in PRESSURE_PLATES
 
     # case 4
-    def push_block_invalid(self, state, direction):
+    def push_block_invalid(self, state, direction, new_map):
         row_of_agent , col_of_agent = state[0]
         direction_row, direction_col = DIRECTIONS[direction]
 
-        # first check if the move push a cube
-        if self.map[row_of_agent + direction_row][col_of_agent + direction_col] in KEY_BLOCKS:
-            # first check if the placement after it is in the bounderis
-            one_step_row , one_step_col = (row_of_agent + direction_row + direction_row), (col_of_agent + direction_col + direction_col)
-            if not (0 <= one_step_row < self.rows and 0 <= one_step_col < self.cols):
+        one_move_row, one_move_col = row_of_agent + direction_row, col_of_agent + direction_col
+        two_move_row, two_move_col = row_of_agent + 2 * direction_row, col_of_agent + 2 * direction_col
+
+        # first check if the move push a cube - so if in the other plate there is a key!
+        if new_map[one_move_row][one_move_col] in KEY_BLOCKS:
+            # now there is a cube - first check if the placement after it is in the bounderis
+            if not (0 <= two_move_row < self.rows and 0 <= two_move_col < self.cols):
                 # the next step is out of bounderies for ROW and COL
                 return True
-            # so it is in boundry - check if there is a cube after it
-            if self.map[one_step_row][one_step_col] in KEY_BLOCKS:
+            # so it is in boundry - check if there is a cube after it - 2 cube in a row cannot
+            if new_map[two_move_row][two_move_col] in KEY_BLOCKS:
                 return True
             # check if there is a wall after it
-            if self.map[one_step_row][one_step_col] ==  WALL:
+            if new_map[two_move_row][two_move_col] ==  WALL:
                 return True
-            # check if we push it to a wrong pressure
-            if self.map[one_step_row][one_step_col] in PRESSURE_PLATES:
-                plate_pressure = self.map[one_step_row][one_step_col]
-                key_block = self.map[row_of_agent + direction_row][col_of_agent + direction_col]
+            # check if we push the cube to a wrong pressure
+            if new_map[two_move_row][two_move_col] in PRESSURE_PLATES:
+                plate_pressure = new_map[two_move_row][two_move_col]
+                key_block = new_map[one_move_row][one_move_col]
                 if (plate_pressure % 10) != (key_block % 10):
                     # they have diffrent numbers 
                     return True
@@ -279,16 +232,15 @@ class PressurePlateProblem(search.Problem):
         return False
 
     # case 5
-    def locked_door(self, state, direction):
+    def locked_door(self, state, direction, new_map):
         row_of_agent , col_of_agent = state[0]
         direction_row, direction_col = DIRECTIONS[direction]
 
-        if self.map[row_of_agent + direction_row][col_of_agent + direction_col] in LOCKED_DOORS:
-            # now i will do a check if the door is free to go or not
-            type_door = (self.map[row_of_agent + direction_row][col_of_agent + direction_col]) % 10
-            if self.door_requirements.get(type_door, 0) > 0 :
-                # the door is locekd
-                return True
+        cell = new_map[row_of_agent + direction_row][col_of_agent + direction_col]
+        open_doors = state[2]
+
+        if cell in LOCKED_DOORS and (cell % 10) not in open_doors:
+            return True
         return False
 
 
