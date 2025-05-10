@@ -38,6 +38,7 @@ class PressurePlateProblem(search.Problem):
         Don't forget to set the goal or implement the goal test"""
         # initial - the all metrix
         self.map = initial
+        self.goal = None
         # I want to pass the constructor not the all netrix just the - initial stats
         agent_placement = None
         key_blocks = []
@@ -51,6 +52,7 @@ class PressurePlateProblem(search.Problem):
                 # i will keep the goal for later
                 if placement == GOAL:
                     self.goal = (i,j)
+                    print("that the goal",self.goal)
         # keep info for later
         self.rows = len(self.map)
         self.cols = len(self.map[0])
@@ -59,7 +61,10 @@ class PressurePlateProblem(search.Problem):
         # so far I just collect the all informetion and now i will add it to states - frozenset - no open door in the beging , plated coverd
         initial_state = (agent_placement, tuple(sorted(key_blocks)), frozenset(), frozenset())
         # note - I keep the first item in the initial_state to be = the agent = state[0]
-        search.Problem.__init__(self, initial_state)
+        print("📦 Initial state:", agent_placement, key_blocks, self.goal)
+        search.Problem.__init__(self, initial_state, goal=self.goal)
+        print("📦 Initial state:", agent_placement, key_blocks, self.goal)
+
 
     # this function is to keep the data i need
     def count_by_type(self, matrix, valid_range):
@@ -114,10 +119,14 @@ class PressurePlateProblem(search.Problem):
     def successor(self, state):
         """ Generates the successor states returns [(action, achieved_states, ...)]"""
         # first thing - check for every UP DOWN LEFT RIGHT the all possible situtions
+        # print("🔁 Generating successors for:", state[0])
+        # print("🔁 Called successor for:", state[0])
+        # print("i am in succsor")
         new_states = []
         for direction in ["R", "L", "U", "D"]:
             possible_moves = self.helper_successor(state, direction)
             new_states.extend(possible_moves)
+        # print("✅ New state:", new_states)
         return new_states
     
     def helper_successor(self, state , direction):
@@ -269,6 +278,7 @@ class PressurePlateProblem(search.Problem):
 
     def goal_test(self, state):
         """ given a state, checks if this is the goal state, compares to the created goal state returns True/False"""
+        # print("👀 Checking goal for:", state[0], "==", self.goal)
         # i want to check if agent is on goal
         return state[0] == self.goal
 
@@ -288,4 +298,5 @@ def create_pressure_plate_problem(game):
     return PressurePlateProblem(game)
 
 if __name__ == '__main__':
+    # print("hiiiiiiiiiiiiiiiiii")
     ex1_check.main()
