@@ -47,7 +47,7 @@ class PressurePlateProblem(search.Problem):
                     agent_placement = (i,j)
                 if placement in KEY_BLOCKS:
                     # i keep the placement of the cube and its number
-                    key_blocks.append((i,j,placement - 10))
+                    key_blocks.append((i,j,placement % 10))
                 # i will keep the goal for later
                 if placement == GOAL:
                     self.goal = (i,j)
@@ -57,7 +57,7 @@ class PressurePlateProblem(search.Problem):
         # keep the num of "pressure plates"
         self.pressure_plate_counts = self.count_by_type(self.map, PRESSURE_PLATES)
         # so far I just collect the all informetion and now i will add it to states - frozenset - no open door in the beging , plated coverd
-        initial_state = (agent_placement, tuple(sorted(key_blocks)),frozenset(), {})
+        initial_state = (agent_placement, tuple(sorted(key_blocks)), frozenset(), frozenset())
         # note - I keep the first item in the initial_state to be = the agent = state[0]
         search.Problem.__init__(self, initial_state)
 
@@ -73,23 +73,44 @@ class PressurePlateProblem(search.Problem):
 
     # to copy to each state the map that relevnt for him 
     def get_effective_map(self, state):
-        agent_pos, key_blocks, open_doors , _= state
+        # get the num of pressed
+        pressed = dict(state[3])
+        required = self.pressure_plate_counts
+        key_blocks = list(state[1])
+        open_doors = set(state[2])
+
         map_copy = [list(row) for row in self.map]
         for i in range(self.rows):
             for j in range(self.cols):
                 cell = map_copy[i][j]
-                # if the cell is a open door
+                # if the cell is a open door - now
                 if cell in LOCKED_DOORS and (cell % 10) in open_doors:
                     map_copy[i][j] = FLOOR
+
+                # if the cell is pressed botten - now 
+                if cell in PRESSURE_PLATES:
+                   type_of = cell % 10
+                   if pressed.get(type_of , 0) == required.get(type_of, 0):
+                       map_copy[i][j] = WALL
+
+                # if the agent is in other placement
+                if cell == AGENT:
+                    # delete it 
+                    map_copy[i][j] = FLOOR 
+
+                # delete all key blockes
+                if cell in KEY_BLOCKS:
+                    map_copy[i][j] = FLOOR 
+
+        # update the new one place of the agent
+        rowA , colA = state[0]
+        map_copy[rowA][colA] = AGENT
+        # update the all key blockes new placne ment
         for r, c, t in key_blocks:
-            cell = map_copy[r][c]
-            if cell in PRESSURE_PLATES and (cell % 10) == t:
-                map_copy[r][c] = WALL
-            else:
-                map_copy[r][c] = 10 + t
+            map_copy[r][c] = 10 + t
+
         return map_copy 
     
-
     def successor(self, state):
         """ Generates the successor states returns [(action, achieved_states, ...)]"""
         # first thing - check for every UP DOWN LEFT RIGHT the all possible situtions
@@ -138,7 +159,7 @@ class PressurePlateProblem(search.Problem):
             # keep the new placment of the agen
             new_agent_placement = (one_move_row, one_move_col)
             # keep the all info about the "key blockes"
-            new_state = (new_agent_placement, key_blocks, frozenset(open_doors), plates_covered)
+            new_state = (new_agent_placement, tuple(sorted(key_blocks)), frozenset(open_doors), frozenset(plates_covered.items()))
             results.append((direction, new_state))
             return results
         
@@ -152,7 +173,7 @@ class PressurePlateProblem(search.Problem):
                     # add it to the new position
                     key_blocks.append((two_move_row, two_move_col, key_type))
                     # update all
-                    new_state = ((one_move_row, one_move_col), tuple(sorted(key_blocks)), frozenset(open_doors), plates_covered)
+                    new_state = ((one_move_row, one_move_col), tuple(sorted(key_blocks)), frozenset(open_doors), frozenset(plates_covered.items()))
                     results.append((direction, new_state))
                     return results
 
@@ -170,11 +191,11 @@ class PressurePlateProblem(search.Problem):
                     plates_covered[key_type] = plates_covered.get(key_type, 0) + 1
                     # now maybe we open a door 
                     if plates_covered[key_type] == self.pressure_plate_counts[key_type]:
-                            open_doors.add(key_type)
+                        open_doors.add(key_type)
                     # remove the placment of the cube becuse we did a move
                     key_blocks.remove((one_move_row, one_move_col, key_type))
                     new_agent_placement = (one_move_row, one_move_col)
-                    new_state = (new_agent_placement, tuple(sorted(key_blocks)), frozenset(open_doors), dict(plates_covered))
+                    new_state = (new_agent_placement, tuple(sorted(key_blocks)), frozenset(open_doors),frozenset(plates_covered.items()) )
                     results.append((direction, new_state))
                     return results
                 
@@ -240,7 +261,7 @@ class PressurePlateProblem(search.Problem):
         cell = new_map[row_of_agent + direction_row][col_of_agent + direction_col]
         open_doors = state[2]
 
-        # tri to enter a door and it locked - not in open doors
+        # try to enter a door and it locked - not in open doors
         if cell in LOCKED_DOORS and (cell % 10) not in open_doors:
             return True
         return False
@@ -260,14 +281,11 @@ class PressurePlateProblem(search.Problem):
 
         return abs(agent_pos[0] - goal_pos[0]) + abs(agent_pos[1] - goal_pos[1])
 
-
-
 def create_pressure_plate_problem(game):
     print("<<create_pressure_plate_problem")
     """ Create a pressure plate problem, based on the description.
     game - tuple of tuples as described in pdf file"""
     return PressurePlateProblem(game)
-
 
 if __name__ == '__main__':
     ex1_check.main()
