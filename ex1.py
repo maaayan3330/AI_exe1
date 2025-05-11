@@ -39,6 +39,9 @@ class PressurePlateProblem(search.Problem):
         # initial - the all metrix
         self.map = initial
         self.goal = None
+        ##############################################################################################
+        self.visited_states = set()
+        #################################################################################################
         # I want to pass the constructor not the all netrix just the - initial stats
         agent_placement = None
         key_blocks = []
@@ -116,12 +119,22 @@ class PressurePlateProblem(search.Problem):
 
         return map_copy 
     
+    def normalize_state(agent, key_blocks, open_doors, plates_covered):
+        return (
+            agent,
+            tuple(sorted(key_blocks)),
+            frozenset(open_doors),
+            frozenset(sorted(plates_covered.items()))
+        )
+
+    
     def successor(self, state):
         """ Generates the successor states returns [(action, achieved_states, ...)]"""
         # first thing - check for every UP DOWN LEFT RIGHT the all possible situtions
-        print("🔁 Generating successors for:", state[0])
-        print("🔁 Called successor for:", state[0])
-        # print("i am in succsor")
+        #########################################################################################
+        # print("🔁 Generating successors for:", state[0])
+        # print("🔁 Called successor for:", state[0])
+       #############################################################################################
         new_states = []
         for direction in ["R", "L", "U", "D"]:
             possible_moves = self.helper_successor(state, direction)
@@ -131,17 +144,7 @@ class PressurePlateProblem(search.Problem):
     
     def helper_successor(self, state , direction):
         results = []
-        # # the corrent map
-        # map_for_state = self.get_effective_map(state)
-        # ##################################################################למחוק
-        # direction_row, direction_col = DIRECTIONS[direction]
-        # row_of_agent, col_of_agent = state[0]
-        # next_row = row_of_agent + direction_row
-        # next_col = col_of_agent + direction_col
-        # ##################################################################למחוק
-        # print(f"🚶 Agent at {state[0]}, trying direction: {direction}")
-        # print(f"🗺️ Next cell value: {map_for_state[next_row][next_col]}")
-        # ##### check for wrong cases - for better time run : #####
+        # ##### check for wrong cases - for better time run :
         # case 1 - if the next step is out of the boundry of the metrix
         if not self.out_of_boundry(state, direction):
             return results
@@ -190,6 +193,7 @@ class PressurePlateProblem(search.Problem):
             new_agent_placement = (one_move_row, one_move_col)
             # keep the all info about the "key blockes"
             new_state = (new_agent_placement, tuple(sorted(key_blocks)), frozenset(open_doors), frozenset(plates_covered.items()))
+            # print("🧠 Created new_state:", new_state)
             results.append((direction, new_state))
             return results
         
@@ -204,6 +208,7 @@ class PressurePlateProblem(search.Problem):
                     key_blocks.append((two_move_row, two_move_col, key_type))
                     # update all
                     new_state = ((one_move_row, one_move_col), tuple(sorted(key_blocks)), frozenset(open_doors), frozenset(plates_covered.items()))
+                    # print("🧠 Created new_state:", new_state)
                     results.append((direction, new_state))
                     return results
 
@@ -225,7 +230,8 @@ class PressurePlateProblem(search.Problem):
                     # remove the placment of the cube becuse we did a move
                     key_blocks.remove((one_move_row, one_move_col, key_type))
                     new_agent_placement = (one_move_row, one_move_col)
-                    new_state = (new_agent_placement, tuple(sorted(key_blocks)), frozenset(open_doors),frozenset(plates_covered.items()) )
+                    new_state = (new_agent_placement, tuple(sorted(key_blocks)), frozenset(open_doors),frozenset(plates_covered.items()))
+                    # print("🧠 Created new_state:", new_state)
                     results.append((direction, new_state))
                     return results
                 
