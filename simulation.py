@@ -1,23 +1,16 @@
-import ex1_check
+import pygame
+import time
+
 import search
-import utils
 
-id = ["No numbers - I'm special!"]
-
-""" Rules """
-BLANK = 0
-WALL = 99
-FLOOR = 98
-AGENT = 1
-GOAL = 2
-# LOCKED_DOORS = [40,...,49]
-# PRESSED_PLATES = [30,...,39]
-# PRESSURE_PLATES = [20,...,29]
-# KEY_BLOCKS = [10,...,19]
-LOCKED_DOORS = list(range(40, 50))
-PRESSED_PLATES = list(range(30, 40))
-PRESSURE_PLATES = list(range(20, 30))
-KEY_BLOCKS = list(range(10, 20))
+# צבעים
+WHITE = (255, 255, 255)
+GRAY = (200, 200, 200)
+BLACK = (0, 0, 0)
+BLUE = (100, 100, 255)
+RED = (255, 100, 100)
+GREEN = (100, 255, 100)
+YELLOW = (255, 255, 100)
 
 # help with the drections
 DIRECTIONS = {
@@ -27,8 +20,21 @@ DIRECTIONS = {
     "D": (1, 0)
 }
 
+# חוקים
+BLANK = 0
+WALL = 99
+FLOOR = 98
+AGENT = 1
+GOAL = 2
+AGENT_ON_GOAL = 3
 
+KEY_BLOCKS = list(range(10, 20))
+PRESSURE_PLATES = list(range(20, 30))
+PRESSED_PLATES = list(range(30, 40))
+LOCKED_DOORS = list(range(40, 50))
 
+CELL_SIZE = 60
+# Define the class PressurePlateProblem
 class PressurePlateProblem(search.Problem):
     """This class implements a pressure plate problem"""
 
@@ -319,77 +325,98 @@ class PressurePlateProblem(search.Problem):
         return False
 
 
-    def goal_test(self, state):
-        """ given a state, checks if this is the goal state, compares to the created goal state returns True/False"""
-        # print("👀 Checking goal for:", state[0], "==", self.goal)
-        # i want to check if agent is on goal
-        return state[0] == self.goal
 
-    # def h(self, node):
-    #     """ This is the heuristic. It gets a node (not a state)
-    #     and returns a goal distance estimate"""
-    #     """Simple heuristic: Manhattan distance from agent to goal"""
-    #     agent_pos = node.state[0]
-    #     goal_pos = self.goal
+def draw_board(screen, grid, font):
+    for row in range(len(grid)):
+        for col in range(len(grid[0])):
+            val = grid[row][col]
 
-    #     return abs(agent_pos[0] - goal_pos[0]) + abs(agent_pos[1] - goal_pos[1])
+            rect = pygame.Rect(col * CELL_SIZE, row * CELL_SIZE, CELL_SIZE, CELL_SIZE)
 
-    # def h(self, node):
-    #     state = node.state
-    #     agent_pos = state[0]
-    #     key_blocks = state[1]
-        
-    #     # מרחק הסוכן למטרה
-    #     agent_to_goal = abs(agent_pos[0] - self.goal[0]) + abs(agent_pos[1] - self.goal[1])
-        
-    #     # סכום מרחקי בלוקים ללחצנים מהסוג הנכון
-    #     total_block_to_plate = 0
-    #     for block_row, block_col, block_type in key_blocks:
-    #         closest_plate_dist = float('inf')
-    #         for i in range(self.rows):
-    #             for j in range(self.cols):
-    #                 cell = self.map[i][j]
-    #                 if cell in PRESSURE_PLATES and cell % 10 == block_type:
-    #                     dist = abs(i - block_row) + abs(j - block_col)
-    #                     closest_plate_dist = min(closest_plate_dist, dist)
-    #         total_block_to_plate += closest_plate_dist
+            if val == WALL:
+                color = BLACK
+            elif val == FLOOR:
+                color = WHITE
+            elif val == AGENT or val == AGENT_ON_GOAL:
+                color = BLUE
+            elif val == GOAL:
+                color = GREEN
+            elif val in KEY_BLOCKS:
+                color = RED
+            elif val in PRESSURE_PLATES:
+                color = YELLOW
+            elif val in PRESSED_PLATES:
+                color = (255, 165, 0)  # כתום
+            elif val in LOCKED_DOORS:
+                color = GRAY
+            else:
+                color = WHITE
 
-    #     return agent_to_goal + total_block_to_plate
+            pygame.draw.rect(screen, color, rect)
+            pygame.draw.rect(screen, GRAY, rect, 1)
 
-    def h(self, node):
-        agent_pos = node.state[0]
-        key_blocks = node.state[1]
-        plates_covered = dict(node.state[3])
+            # כתיבת הערך
+            text = font.render(str(val), True, BLACK)
+            text_rect = text.get_rect(center=rect.center)
+            screen.blit(text, text_rect)
 
-        # חלק 1: מרחק הסוכן למטרה
-        agent_to_goal = abs(agent_pos[0] - self.goal[0]) + abs(agent_pos[1] - self.goal[1])
+def run_simulation():
+    # Initial state setup (map)
+    # הלוח
+    initial_state = (
+        (99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99),
+        (99, 98, 98, 98, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99),
+        (99, 98, 99, 98, 99, 99, 99, 99, 99, 99, 98, 98, 99, 99, 99),
+        (99, 98, 99, 98, 98, 99, 25, 98, 99, 99, 98, 98, 98, 99, 99),
+        (99, 98, 99, 98, 2, 45, 98, 98, 98, 98, 98, 98, 98, 99, 99),
+        (99, 98, 99, 99, 99, 99, 98, 98, 99, 99, 99, 42, 99, 99, 99),
+        (99, 98, 98, 98, 98, 99, 99, 99, 99, 99, 22, 98, 98, 99, 99),
+        (99, 99, 99, 99, 98, 99, 98, 98, 98, 99, 98, 98, 98, 99, 99),
+        (99, 98, 98, 98, 98, 99, 12, 98, 98, 99, 98, 98, 98, 99, 99),
+        (99, 98, 99, 99, 23, 98, 98, 15, 98, 99, 99, 41, 99, 99, 99),
+        (99, 98, 99, 99, 98, 98, 98, 98, 98, 99, 20, 98, 98, 98, 99),
+        (99, 98, 99, 99, 98, 98, 99, 98, 98, 99, 98, 98, 10, 98, 99),
+        (99, 98, 99, 99, 98, 13, 98, 98, 98, 40, 11, 98, 98, 98, 99),
+        (99, 98, 43, 98, 98, 98, 98, 98, 98, 99, 21, 98, 98, 1, 99),
+        (99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99),
+    )
 
-        # חלק 2: סכום מרחקי כל בלוק ללחצן המתאים הקרוב ביותר
-        block_to_plate_total = 0
-        for r, c, block_type in key_blocks:
-            if plates_covered.get(block_type, 0) >= self.pressure_plate_counts.get(block_type, 0):
-                continue  # כבר כל הלחצנים מהסוג הזה מכוסים
-            min_dist = float('inf')
-            for i in range(self.rows):
-                for j in range(self.cols):
-                    cell = self.map[i][j]
-                    if cell in PRESSURE_PLATES and cell % 10 == block_type:
-                        dist = abs(r - i) + abs(c - j)
-                        if dist < min_dist:
-                            min_dist = dist
-            if min_dist < float('inf'):
-                block_to_plate_total += min_dist  # סכום המרחקים המינימליים של בלוקים ללחצנים
+    actions = ['L', 'U', 'U', 'R', 'U', 'L', 'L', 'D', 'L', 'D', 'L', 'L', 'L', 'L', 'L', 'D', 'L', 'U', 'U', 'U', 'D',
+               'D', 'D', 'L', 'L', 'L', 'U', 'U', 'U', 'U', 'U', 'R', 'R', 'R', 'U', 'U', 'L', 'L', 'L', 'U', 'U', 'U',
+               'U', 'U', 'R', 'R', 'D', 'D', 'R', 'D']
 
-        return agent_to_goal + block_to_plate_total
+    # Initialize pygame
+    pygame.init()
+    screen = pygame.display.set_mode((len(initial_state[0]) * (CELL_SIZE), len(initial_state) * (CELL_SIZE)))
+    pygame.display.set_caption("Pressure Plate Problem")
 
+    clock = pygame.time.Clock()
 
+    problem = PressurePlateProblem(initial_state)
+    state = initial_state
 
-def create_pressure_plate_problem(game):
-    print("<<create_pressure_plate_problem")
-    """ Create a pressure plate problem, based on the description.
-    game - tuple of tuples as described in pdf file"""
-    return PressurePlateProblem(game)
+    # Run the simulation
+    for action in actions:
+        for a, n_state in problem.successor(state):
+            if a == action:
+                state = n_state
+                break
 
-if __name__ == '__main__':
-    # print("hiiiiiiiiiiiiiiiiii")
-    ex1_check.main()
+        # Clear the screen and redraw the state
+        screen.fill((255, 255, 255))  # White background
+        draw_board(screen, state, pygame.font.SysFont(None, 24))
+        pygame.display.flip()
+
+        time.sleep(0.5)  # Slow down the movement to see it
+        clock.tick(60)
+
+        # Event handling to quit
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return
+
+    pygame.quit()
+
+    # Run the simulation
+    run_simulation()
