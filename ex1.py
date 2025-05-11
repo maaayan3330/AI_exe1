@@ -194,7 +194,11 @@ class PressurePlateProblem(search.Problem):
             # keep the all info about the "key blockes"
             new_state = (new_agent_placement, tuple(sorted(key_blocks)), frozenset(open_doors), frozenset(plates_covered.items()))
             # print("🧠 Created new_state:", new_state)
-            results.append((direction, new_state))
+            # results.append((direction, new_state))
+            if new_state not in self.visited_states:
+                self.visited_states.add(new_state)
+                results.append((direction, new_state))
+
             return results
         
         # case 2 - the agent want to push a "key block" to FLOOR and it is valid (it mean there is no wall/key block after the one he want to push) - we cannn push!!
@@ -209,7 +213,10 @@ class PressurePlateProblem(search.Problem):
                     # update all
                     new_state = ((one_move_row, one_move_col), tuple(sorted(key_blocks)), frozenset(open_doors), frozenset(plates_covered.items()))
                     # print("🧠 Created new_state:", new_state)
-                    results.append((direction, new_state))
+                    # results.append((direction, new_state))
+                    if new_state not in self.visited_states:
+                        self.visited_states.add(new_state)
+                        results.append((direction, new_state))
                     return results
 
         # case 3 - the agent push a "key block" and now it is on a pressure plates 
@@ -232,7 +239,10 @@ class PressurePlateProblem(search.Problem):
                     new_agent_placement = (one_move_row, one_move_col)
                     new_state = (new_agent_placement, tuple(sorted(key_blocks)), frozenset(open_doors),frozenset(plates_covered.items()))
                     # print("🧠 Created new_state:", new_state)
-                    results.append((direction, new_state))
+                    # results.append((direction, new_state))
+                    if new_state not in self.visited_states:
+                        self.visited_states.add(new_state)
+                        results.append((direction, new_state))
                     return results
                 
         return results
@@ -315,14 +325,37 @@ class PressurePlateProblem(search.Problem):
         # i want to check if agent is on goal
         return state[0] == self.goal
 
-    def h(self, node):
-        """ This is the heuristic. It gets a node (not a state)
-        and returns a goal distance estimate"""
-        """Simple heuristic: Manhattan distance from agent to goal"""
-        agent_pos = node.state[0]
-        goal_pos = self.goal
+    # def h(self, node):
+    #     """ This is the heuristic. It gets a node (not a state)
+    #     and returns a goal distance estimate"""
+    #     """Simple heuristic: Manhattan distance from agent to goal"""
+    #     agent_pos = node.state[0]
+    #     goal_pos = self.goal
 
-        return abs(agent_pos[0] - goal_pos[0]) + abs(agent_pos[1] - goal_pos[1])
+    #     return abs(agent_pos[0] - goal_pos[0]) + abs(agent_pos[1] - goal_pos[1])
+
+    def h(self, node):
+        state = node.state
+        agent_pos = state[0]
+        key_blocks = state[1]
+        
+        # מרחק הסוכן למטרה
+        agent_to_goal = abs(agent_pos[0] - self.goal[0]) + abs(agent_pos[1] - self.goal[1])
+        
+        # סכום מרחקי בלוקים ללחצנים מהסוג הנכון
+        total_block_to_plate = 0
+        for block_row, block_col, block_type in key_blocks:
+            closest_plate_dist = float('inf')
+            for i in range(self.rows):
+                for j in range(self.cols):
+                    cell = self.map[i][j]
+                    if cell in PRESSURE_PLATES and cell % 10 == block_type:
+                        dist = abs(i - block_row) + abs(j - block_col)
+                        closest_plate_dist = min(closest_plate_dist, dist)
+            total_block_to_plate += closest_plate_dist
+
+        return agent_to_goal + total_block_to_plate
+
 
 def create_pressure_plate_problem(game):
     print("<<create_pressure_plate_problem")
