@@ -133,6 +133,14 @@ class PressurePlateProblem(search.Problem):
         results = []
         # the corrent map
         map_for_state = self.get_effective_map(state)
+        ##################################################################למחוק
+        direction_row, direction_col = DIRECTIONS[direction]
+        row_of_agent, col_of_agent = state[0]
+        next_row = row_of_agent + direction_row
+        next_col = col_of_agent + direction_col
+        ##################################################################למחוק
+        print(f"🚶 Agent at {state[0]}, trying direction: {direction}")
+        print(f"🗺️ Next cell value: {map_for_state[next_row][next_col]}")
         ##### check for wrong cases - for better time run : #####
         # case 1 - if the next step is out of the boundry of the metrix
         if not self.out_of_boundry(state, direction):
