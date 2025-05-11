@@ -1,7 +1,7 @@
 import ex1_check
 import search
 import utils
-
+# עבר את כל המבנחים חוץ מ13 ו15
 id = ["No numbers - I'm special!"]
 
 """ Rules """
@@ -329,107 +329,6 @@ class PressurePlateProblem(search.Problem):
         # print("👀 Checking goal for:", state[0], "==", self.goal)
         # i want to check if agent is on goal
         return state[0] == self.goal
-
-    # def h(self, node):
-    #     """ This is the heuristic. It gets a node (not a state)
-    #     and returns a goal distance estimate"""
-    #     """Simple heuristic: Manhattan distance from agent to goal"""
-    #     agent_pos = node.state[0]
-    #     goal_pos = self.goal
-
-    #     return abs(agent_pos[0] - goal_pos[0]) + abs(agent_pos[1] - goal_pos[1]) * 2
-
-    # def h(self, node):
-    #     state = node.state
-    #     agent_pos = state[0]
-    #     key_blocks = state[1]
-        
-    #     # מרחק הסוכן למטרה
-    #     agent_to_goal = abs(agent_pos[0] - self.goal[0]) + abs(agent_pos[1] - self.goal[1])
-        
-    #     # סכום מרחקי בלוקים ללחצנים מהסוג הנכון
-    #     total_block_to_plate = 0
-    #     for block_row, block_col, block_type in key_blocks:
-    #         closest_plate_dist = float('inf')
-    #         for i in range(self.rows):
-    #             for j in range(self.cols):
-    #                 cell = self.map[i][j]
-    #                 if cell in PRESSURE_PLATES and cell % 10 == block_type:
-    #                     dist = abs(i - block_row) + abs(j - block_col)
-    #                     closest_plate_dist = min(closest_plate_dist, dist)
-    #         total_block_to_plate += closest_plate_dist
-
-    #     return (agent_to_goal + total_block_to_plate) * 1.5
-
-    # עבד על רוב הבעיות 
-
-    # def h(self, node):
-    #     state = node.state
-    #     agent_pos = state[0]
-    #     key_blocks = state[1]
-    #     plates_covered = dict(state[3])
-
-    #     # חלק 1: מרחק הסוכן למטרה
-    #     agent_to_goal = abs(agent_pos[0] - self.goal[0]) + abs(agent_pos[1] - self.goal[1])
-
-    #     # חלק 2: מרחק מינימלי מבלוקים ללחצנים תואמים שעדיין לא כוסו
-    #     total_block_to_plate = 0
-    #     needed_blocks = {}
-
-    #     # לחשב כמה לחצנים נותרו לכיסוי מכל סוג
-    #     for t in self.pressure_plate_counts:
-    #         needed = self.pressure_plate_counts[t] - plates_covered.get(t, 0)
-    #         if needed > 0:
-    #             needed_blocks[t] = needed
-
-    #     for block_row, block_col, block_type in key_blocks:
-    #         if block_type not in needed_blocks:
-    #             continue  # אין צורך להזיז את הבלוק הזה
-
-    #         # חיפוש הלחצן הקרוב ביותר מאותו סוג
-    #         min_dist = float('inf')
-    #         for i in range(self.rows):
-    #             for j in range(self.cols):
-    #                 cell = self.map[i][j]
-    #                 if cell in PRESSURE_PLATES and cell % 10 == block_type:
-    #                     dist = abs(block_row - i) + abs(block_col - j)
-    #                     if dist < min_dist:
-    #                         min_dist = dist
-
-    #         if min_dist < float('inf'):
-    #             total_block_to_plate += min_dist
-    #             needed_blocks[block_type] -= 1
-    #             if needed_blocks[block_type] == 0:
-    #                 del needed_blocks[block_type]
-
-    #     return (agent_to_goal + total_block_to_plate) * 1.5
-
-
-    # def h(self, node):
-    #     agent_pos = node.state[0]
-    #     key_blocks = node.state[1]
-    #     plates_covered = dict(node.state[3])
-
-    #     # חלק 1: מרחק הסוכן למטרה
-    #     agent_to_goal = abs(agent_pos[0] - self.goal[0]) + abs(agent_pos[1] - self.goal[1])
-
-    #     # חלק 2: סכום מרחקי כל בלוק ללחצן המתאים הקרוב ביותר
-    #     block_to_plate_total = 0
-    #     for r, c, block_type in key_blocks:
-    #         if plates_covered.get(block_type, 0) >= self.pressure_plate_counts.get(block_type, 0):
-    #             continue  # כבר כל הלחצנים מהסוג הזה מכוסים
-    #         min_dist = float('inf')
-    #         for i in range(self.rows):
-    #             for j in range(self.cols):
-    #                 cell = self.map[i][j]
-    #                 if cell in PRESSURE_PLATES and cell % 10 == block_type:
-    #                     dist = abs(r - i) + abs(c - j)
-    #                     if dist < min_dist:
-    #                         min_dist = dist
-    #         if min_dist < float('inf'):
-    #             block_to_plate_total += min_dist  # סכום המרחקים המינימליים של בלוקים ללחצנים
-
-    #     return (agent_to_goal + block_to_plate_total) * 1.5
 
     def is_block_in_corner(self, r, c):
         walls_or_out = 0
