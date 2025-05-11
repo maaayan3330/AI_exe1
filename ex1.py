@@ -119,8 +119,8 @@ class PressurePlateProblem(search.Problem):
     def successor(self, state):
         """ Generates the successor states returns [(action, achieved_states, ...)]"""
         # first thing - check for every UP DOWN LEFT RIGHT the all possible situtions
-        # print("🔁 Generating successors for:", state[0])
-        # print("🔁 Called successor for:", state[0])
+        print("🔁 Generating successors for:", state[0])
+        print("🔁 Called successor for:", state[0])
         # print("i am in succsor")
         new_states = []
         for direction in ["R", "L", "U", "D"]:
