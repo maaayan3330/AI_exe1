@@ -42,6 +42,8 @@ class PressurePlateProblem(search.Problem):
         ##############################################################################################
         self.visited_states = set()
         #################################################################################################
+        self.map_cache = {}
+        ############################################################################################
         # I want to pass the constructor not the all netrix just the - initial stats
         agent_placement = None
         key_blocks = []
@@ -81,6 +83,8 @@ class PressurePlateProblem(search.Problem):
 
     # to copy to each state the map that relevnt for him 
     def get_effective_map(self, state):
+        if state in self.map_cache:
+            return self.map_cache[state]
         # get the num of pressed
         pressed = dict(state[3])
         required = self.pressure_plate_counts
@@ -116,7 +120,7 @@ class PressurePlateProblem(search.Problem):
         # update the all key blockes new placne ment
         for r, c, t in key_blocks:
             map_copy[r][c] = 10 + t
-
+        self.map_cache[state] = map_copy
         return map_copy 
     
     def normalize_state(agent, key_blocks, open_doors, plates_covered):
