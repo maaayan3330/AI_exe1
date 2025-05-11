@@ -40,10 +40,6 @@ class PressurePlateProblem(search.Problem):
         self.map = initial
         self.goal = None
         ##############################################################################################
-        self.visited_states = set()
-        #################################################################################################
-        self.map_cache = {}
-        ############################################################################################
         # I want to pass the constructor not the all netrix just the - initial stats
         agent_placement = None
         key_blocks = []
@@ -81,47 +77,6 @@ class PressurePlateProblem(search.Problem):
                     counter[block_type] = counter.get(block_type, 0) + 1
         return counter
 
-    # to copy to each state the map that relevnt for him 
-    def get_effective_map(self, state):
-        if state in self.map_cache:
-            return self.map_cache[state]
-        # get the num of pressed
-        pressed = dict(state[3])
-        required = self.pressure_plate_counts
-        key_blocks = list(state[1])
-        open_doors = set(state[2])
-
-        map_copy = [list(row) for row in self.map]
-        for i in range(self.rows):
-            for j in range(self.cols):
-                cell = map_copy[i][j]
-                # if the cell is a open door - now
-                if cell in LOCKED_DOORS and (cell % 10) in open_doors:
-                    map_copy[i][j] = FLOOR
-
-                # if the cell is pressed botten - now 
-                if cell in PRESSURE_PLATES:
-                   type_of = cell % 10
-                   if pressed.get(type_of , 0) == required.get(type_of, 0):
-                       map_copy[i][j] = WALL
-
-                # if the agent is in other placement
-                if cell == AGENT:
-                    # delete it 
-                    map_copy[i][j] = FLOOR 
-
-                # delete all key blockes
-                if cell in KEY_BLOCKS:
-                    map_copy[i][j] = FLOOR 
-
-        # update the new one place of the agent
-        rowA , colA = state[0]
-        map_copy[rowA][colA] = AGENT
-        # update the all key blockes new placne ment
-        for r, c, t in key_blocks:
-            map_copy[r][c] = 10 + t
-        self.map_cache[state] = map_copy
-        return map_copy 
     
     def normalize_state(agent, key_blocks, open_doors, plates_covered):
         return (
@@ -199,9 +154,7 @@ class PressurePlateProblem(search.Problem):
             new_state = (new_agent_placement, tuple(sorted(key_blocks)), frozenset(open_doors), frozenset(plates_covered.items()))
             # print("🧠 Created new_state:", new_state)
             # results.append((direction, new_state))
-            if new_state not in self.visited_states:
-                self.visited_states.add(new_state)
-                results.append((direction, new_state))
+            results.append((direction, new_state))
 
             return results
         
@@ -218,9 +171,7 @@ class PressurePlateProblem(search.Problem):
                     new_state = ((one_move_row, one_move_col), tuple(sorted(key_blocks)), frozenset(open_doors), frozenset(plates_covered.items()))
                     # print("🧠 Created new_state:", new_state)
                     # results.append((direction, new_state))
-                    if new_state not in self.visited_states:
-                        self.visited_states.add(new_state)
-                        results.append((direction, new_state))
+                    results.append((direction, new_state))
                     return results
 
         # case 3 - the agent push a "key block" and now it is on a pressure plates 
@@ -244,9 +195,8 @@ class PressurePlateProblem(search.Problem):
                     new_state = (new_agent_placement, tuple(sorted(key_blocks)), frozenset(open_doors),frozenset(plates_covered.items()))
                     # print("🧠 Created new_state:", new_state)
                     # results.append((direction, new_state))
-                    if new_state not in self.visited_states:
-                        self.visited_states.add(new_state)
-                        results.append((direction, new_state))
+                    
+                    results.append((direction, new_state))
                     return results
                 
         return results
