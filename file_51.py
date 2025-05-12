@@ -44,7 +44,10 @@ class PressurePlateProblem(search.Problem):
         #################################################################################################
         self.map_cache = {}
         ############################################################################################
-        
+        self.base_map = [list(row) for row in initial]
+        ####################################################################
+        self.doors_info = []   # {(i,j): type}
+        self.plates_info = []  # {(i,j): type}
         # I want to pass the constructor not the all netrix just the - initial stats
         agent_placement = None
         key_blocks = []
@@ -52,14 +55,19 @@ class PressurePlateProblem(search.Problem):
             for j, placement in enumerate(row):
                 if placement == AGENT:
                     agent_placement = (i,j)
+                    self.base_map[i][j] = FLOOR
                 if placement in KEY_BLOCKS:
                     # i keep the placement of the cube and its number
                     key_blocks.append((i,j,placement % 10))
+                    self.base_map[i][j] = FLOOR
                 # i will keep the goal for later
                 if placement == GOAL:
                     self.goal = (i,j)
                     # print("that the goal",self.goal)
-    
+                if placement in LOCKED_DOORS:
+                    self.doors_info.append((i,j,placement % 10))
+                if placement in PRESSURE_PLATES:
+                    self.plates_info.append((i,j,placement % 10))
         # keep info for later
         self.rows = len(self.map)
         self.cols = len(self.map[0])
@@ -93,7 +101,7 @@ class PressurePlateProblem(search.Problem):
         key_blocks = list(state[1])
         open_doors = set(state[2])
 
-        map_copy = [list(row) for row in self.map]
+        map_copy = [list(row) for row in self.base_map]
         for i in range(self.rows):
             for j in range(self.cols):
                 cell = map_copy[i][j]
@@ -106,15 +114,6 @@ class PressurePlateProblem(search.Problem):
                    type_of = cell % 10
                    if pressed.get(type_of , 0) == required.get(type_of, 0):
                        map_copy[i][j] = WALL
-
-                # if the agent is in other placement
-                if cell == AGENT:
-                    # delete it 
-                    map_copy[i][j] = FLOOR 
-
-                # delete all key blockes
-                if cell in KEY_BLOCKS:
-                    map_copy[i][j] = FLOOR 
 
         # update the new one place of the agent
         rowA , colA = state[0]
@@ -130,10 +129,7 @@ class PressurePlateProblem(search.Problem):
     def successor(self, state):
         """ Generates the successor states returns [(action, achieved_states, ...)]"""
         # first thing - check for every UP DOWN LEFT RIGHT the all possible situtions
-        #########################################################################################
-        # print("🔁 Generating successors for:", state[0])
-        # print("🔁 Called successor for:", state[0])
-       #############################################################################################
+      
         new_states = []
         for direction in ["R", "L", "U", "D"]:
             possible_moves = self.helper_successor(state, direction)
@@ -150,15 +146,8 @@ class PressurePlateProblem(search.Problem):
         
         # the corrent map
         map_for_state = self.get_effective_map(state)
-        ##################################################################למחוק
-        direction_row, direction_col = DIRECTIONS[direction]
-        row_of_agent, col_of_agent = state[0]
-        next_row = row_of_agent + direction_row
-        next_col = col_of_agent + direction_col
-        ##################################################################למחוק
-        # print(f"🚶 Agent at {state[0]}, trying direction: {direction}")
-        # print(f"🗺️ Next cell value: {map_for_state[next_row][next_col]}")
-        ###################################################################################
+       
+    
         ##### check for wrong cases - for better time run : #####
         # case 2 - if the next step of the agent is to wall 
         if self.next_move_wall(state, direction, map_for_state):
@@ -192,8 +181,7 @@ class PressurePlateProblem(search.Problem):
             new_agent_placement = (one_move_row, one_move_col)
             # keep the all info about the "key blockes"
             new_state = (new_agent_placement, tuple(sorted(key_blocks)), frozenset(open_doors), frozenset(plates_covered.items()))
-            # print("🧠 Created new_state:", new_state)
-            # results.append((direction, new_state))
+            
             if new_state not in self.visited_states:
                 self.visited_states.add(new_state)
                 results.append((direction, new_state))
@@ -211,8 +199,7 @@ class PressurePlateProblem(search.Problem):
                     key_blocks.append((two_move_row, two_move_col, key_type))
                     # update all
                     new_state = ((one_move_row, one_move_col), tuple(sorted(key_blocks)), frozenset(open_doors), frozenset(plates_covered.items()))
-                    # print("🧠 Created new_state:", new_state)
-                    # results.append((direction, new_state))
+                   
                     if new_state not in self.visited_states:
                         self.visited_states.add(new_state)
                         results.append((direction, new_state))
@@ -237,8 +224,7 @@ class PressurePlateProblem(search.Problem):
                     key_blocks.remove((one_move_row, one_move_col, key_type))
                     new_agent_placement = (one_move_row, one_move_col)
                     new_state = (new_agent_placement, tuple(sorted(key_blocks)), frozenset(open_doors),frozenset(plates_covered.items()))
-                    # print("🧠 Created new_state:", new_state)
-                    # results.append((direction, new_state))
+                  
                     if new_state not in self.visited_states:
                         self.visited_states.add(new_state)
                         results.append((direction, new_state))
@@ -256,9 +242,6 @@ class PressurePlateProblem(search.Problem):
         direction_row, direction_col = DIRECTIONS[direction]
         new_row = row_of_agent + direction_row
         new_col = col_of_agent + direction_col
-
-        # print(f"🧭 Move: {direction}, From ({row_of_agent},{col_of_agent}) ➡️ To ({new_row},{new_col})")
-        # print(f"🧱 Bounds check: rows={self.rows}, cols={self.cols}")
 
         return 0 <= new_row < self.rows and 0 <= new_col < self.cols
     
@@ -323,38 +306,7 @@ class PressurePlateProblem(search.Problem):
         # print("👀 Checking goal for:", state[0], "==", self.goal)
         # i want to check if agent is on goal
         return state[0] == self.goal
-
-    # def h(self, node):
-    #     """ This is the heuristic. It gets a node (not a state)
-    #     and returns a goal distance estimate"""
-    #     """Simple heuristic: Manhattan distance from agent to goal"""
-    #     agent_pos = node.state[0]
-    #     goal_pos = self.goal
-
-    #     return abs(agent_pos[0] - goal_pos[0]) + abs(agent_pos[1] - goal_pos[1])
-
-    # def h(self, node):
-    #     state = node.state
-    #     agent_pos = state[0]
-    #     key_blocks = state[1]
-        
-    #     # מרחק הסוכן למטרה
-    #     agent_to_goal = abs(agent_pos[0] - self.goal[0]) + abs(agent_pos[1] - self.goal[1])
-        
-    #     # סכום מרחקי בלוקים ללחצנים מהסוג הנכון
-    #     total_block_to_plate = 0
-    #     for block_row, block_col, block_type in key_blocks:
-    #         closest_plate_dist = float('inf')
-    #         for i in range(self.rows):
-    #             for j in range(self.cols):
-    #                 cell = self.map[i][j]
-    #                 if cell in PRESSURE_PLATES and cell % 10 == block_type:
-    #                     dist = abs(i - block_row) + abs(j - block_col)
-    #                     closest_plate_dist = min(closest_plate_dist, dist)
-    #         total_block_to_plate += closest_plate_dist
-
-    #     return agent_to_goal + total_block_to_plate
-
+    
     def h(self, node):
         agent_pos = node.state[0]
         key_blocks = node.state[1]
