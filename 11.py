@@ -322,7 +322,7 @@ class PressurePlateProblem(search.Problem):
 
         # locked doors penalty
         penalty = 0
-        penalty_per_door = 6  # <-- you can tune this value experimentally
+        penalty_per_door = 5  # <-- you can tune this value experimentally
 
         for i, j , door_id in self.doors_info:
             if door_id not in open_doors:
