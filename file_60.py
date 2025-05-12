@@ -159,10 +159,10 @@ class PressurePlateProblem(search.Problem):
         # case 5 - if the agent next stop is to a locked door
         if self.locked_door(state, direction, map_for_state):
             return results
-        # ##############################################################
-        if self.dead_end_due_to_stuck_blocks(state, direction, map_for_state):
+        ##############################################################
+        if self.dead_end_due_to_stuck_blocks(key_blocks, plates_covered, map_for_state):
             return results
-        # ###############################################################
+        ###############################################################
 
         
 
@@ -317,14 +317,14 @@ class PressurePlateProblem(search.Problem):
                 # the next step is out of bounderies for ROW and COL
                 return True
             # the next step is on floor
-            if new_map[two_move_row][two_move_col] == FLOOR:
+            if new_map[two_move_row][two_move_col] in FLOOR:
                 # and it will stack
-                if self.is_block_stuck(two_move_row, two_move_col, new_map):
+                if self.is_block_stuck(self, one_move_row, one_move_col, new_map):
                     # it will push a cune to a problem placmnebt - נבדוק שבאמת צריך את הקוביה
-                    type_cube = new_map[one_move_row][one_move_col] % 10
-                    how_much_pressed = plates_covered.get(type_cube, 0)
-                    how_much_need = self.pressure_plate_counts.get(type_cube, 0)
-                    if 4 <= how_much_pressed < how_much_need:
+                    type_cube = new_map[one_move_row][one_move_col]
+                    how_much_pressed = plates_covered[type_cube]
+                    how_much_need = self.pressure_plate_counts[type_cube]
+                    if 2 <= how_much_pressed <= how_much_pressed:
                         return True
         
         return False
@@ -359,38 +359,38 @@ class PressurePlateProblem(search.Problem):
         # i want to check if agent is on goal
         return state[0] == self.goal
     
-    def h(self, node):
-        agent_pos = node.state[0]
-        key_blocks = node.state[1]
-        plates_covered = dict(node.state[3])
-
-        # חלק 1: מרחק הסוכן למטרה
-        agent_to_goal = abs(agent_pos[0] - self.goal[0]) + abs(agent_pos[1] - self.goal[1])
-
-        # חלק 2: סכום מרחקי כל בלוק ללחצן המתאים הקרוב ביותר
-        block_to_plate_total = 0
-        for r, c, block_type in key_blocks:
-            if plates_covered.get(block_type, 0) >= self.pressure_plate_counts.get(block_type, 0):
-                continue  # כבר כל הלחצנים מהסוג הזה מכוסים
-            min_dist = float('inf')
-            for i, j, plate_type in self.plates_info:
-                if plate_type != block_type:
-                    continue
-                dist = abs(r - i) + abs(c - j)
-                if dist < min_dist:
-                    min_dist = dist
-            if min_dist < float('inf'):
-                block_to_plate_total += min_dist
-
-        return (agent_to_goal + block_to_plate_total) 
     # def h(self, node):
-    #     """ This is the heuristic. It gets a node (not a state)
-    #     and returns a goal distance estimate"""
-    #     """Simple heuristic: Manhattan distance from agent to goal"""
     #     agent_pos = node.state[0]
-    #     goal_pos = self.goal
+    #     key_blocks = node.state[1]
+    #     plates_covered = dict(node.state[3])
 
-    #     return abs(agent_pos[0] - goal_pos[0]) + abs(agent_pos[1] - goal_pos[1])
+    #     # חלק 1: מרחק הסוכן למטרה
+    #     agent_to_goal = abs(agent_pos[0] - self.goal[0]) + abs(agent_pos[1] - self.goal[1])
+
+    #     # חלק 2: סכום מרחקי כל בלוק ללחצן המתאים הקרוב ביותר
+    #     block_to_plate_total = 0
+    #     for r, c, block_type in key_blocks:
+    #         if plates_covered.get(block_type, 0) >= self.pressure_plate_counts.get(block_type, 0):
+    #             continue  # כבר כל הלחצנים מהסוג הזה מכוסים
+    #         min_dist = float('inf')
+    #         for i, j, plate_type in self.plates_info:
+    #             if plate_type != block_type:
+    #                 continue
+    #             dist = abs(r - i) + abs(c - j)
+    #             if dist < min_dist:
+    #                 min_dist = dist
+    #         if min_dist < float('inf'):
+    #             block_to_plate_total += min_dist
+
+    #     return (agent_to_goal + block_to_plate_total) 
+    def h(self, node):
+        """ This is the heuristic. It gets a node (not a state)
+        and returns a goal distance estimate"""
+        """Simple heuristic: Manhattan distance from agent to goal"""
+        agent_pos = node.state[0]
+        goal_pos = self.goal
+
+        return abs(agent_pos[0] - goal_pos[0]) + abs(agent_pos[1] - goal_pos[1]) * 0.5
 
 
 

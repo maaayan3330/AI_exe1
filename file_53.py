@@ -159,11 +159,6 @@ class PressurePlateProblem(search.Problem):
         # case 5 - if the agent next stop is to a locked door
         if self.locked_door(state, direction, map_for_state):
             return results
-        # ##############################################################
-        if self.dead_end_due_to_stuck_blocks(state, direction, map_for_state):
-            return results
-        # ###############################################################
-
         
 
         # check now for good cases to insert to the states :
@@ -302,56 +297,6 @@ class PressurePlateProblem(search.Problem):
             return True
         return False
 
-    def dead_end_due_to_stuck_blocks(self, state, direction, new_map):
-        row_of_agent , col_of_agent = state[0]
-        direction_row, direction_col = DIRECTIONS[direction]
-        plates_covered = dict(state[3])
-
-        one_move_row, one_move_col = row_of_agent + direction_row, col_of_agent + direction_col
-        two_move_row, two_move_col = row_of_agent + 2 * direction_row, col_of_agent + 2 * direction_col
-
-        # first check if the move push a cube - so if in the other plate there is a key!
-        if new_map[one_move_row][one_move_col] in KEY_BLOCKS:
-            # now there is a cube - first check if the placement after it is in the bounderis
-            if not (0 <= two_move_row < self.rows and 0 <= two_move_col < self.cols):
-                # the next step is out of bounderies for ROW and COL
-                return True
-            # the next step is on floor
-            if new_map[two_move_row][two_move_col] == FLOOR:
-                # and it will stack
-                if self.is_block_stuck(two_move_row, two_move_col, new_map):
-                    # it will push a cune to a problem placmnebt - נבדוק שבאמת צריך את הקוביה
-                    type_cube = new_map[one_move_row][one_move_col] % 10
-                    how_much_pressed = plates_covered.get(type_cube, 0)
-                    how_much_need = self.pressure_plate_counts.get(type_cube, 0)
-                    if 4 <= how_much_pressed < how_much_need:
-                        return True
-        
-        return False
-
-                
-
-    
-    def is_block_stuck(self, r, c, new_map):
-        # אם הקובייה על לחצן – היא לא תקועה
-        if (r, c) in [(i, j) for i, j, _ in self.plates_info]:
-            return False
-
-        walls = 0
-        for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-            nr, nc = r + dr, c + dc
-
-            # בדיקה שלא חורג מגבולות המפה
-            if 0 <= nr < self.rows and 0 <= nc < self.cols:
-                if new_map[nr][nc] == WALL:
-                    walls += 1
-            else:
-                walls += 1  # מחוץ למפה = קיר
-
-        return walls >= 2  # פינה אם יש לפחות שני קירות
-
-
-
 
     def goal_test(self, state):
         """ given a state, checks if this is the goal state, compares to the created goal state returns True/False"""
@@ -382,15 +327,7 @@ class PressurePlateProblem(search.Problem):
             if min_dist < float('inf'):
                 block_to_plate_total += min_dist
 
-        return (agent_to_goal + block_to_plate_total) 
-    # def h(self, node):
-    #     """ This is the heuristic. It gets a node (not a state)
-    #     and returns a goal distance estimate"""
-    #     """Simple heuristic: Manhattan distance from agent to goal"""
-    #     agent_pos = node.state[0]
-    #     goal_pos = self.goal
-
-    #     return abs(agent_pos[0] - goal_pos[0]) + abs(agent_pos[1] - goal_pos[1])
+        return (agent_to_goal + block_to_plate_total) * 0.5
 
 
 
