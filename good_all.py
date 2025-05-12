@@ -41,7 +41,7 @@ class PressurePlateProblem(search.Problem):
         self.map = initial
         self.goal = None
         ##############################################################################################
-        self.visited_states = set()
+        # self.visited_states = set()
         #################################################################################################
         self.map_cache = {}
         ############################################################################################
@@ -81,10 +81,6 @@ class PressurePlateProblem(search.Problem):
         search.Problem.__init__(self, initial_state, goal=self.goal)
         print("📦 Initial state:", agent_placement, key_blocks, self.goal)
 
-#          (5,7) (5 ,6 ,3).....() , {} , {}   start
-#          (5,6) (5,5,3).......() {} {}      step 1
-#          (5,7) (5 ,6 ,3).....() , {} , {}
- 
 
     # this function is to keep the data i need
     def count_by_type(self, matrix, valid_range):
@@ -184,9 +180,9 @@ class PressurePlateProblem(search.Problem):
             # keep the all info about the "key blockes"
             new_state = (new_agent_placement, tuple(sorted(key_blocks)), frozenset(open_doors), frozenset(plates_covered.items()))
             
-            if new_state not in self.visited_states:
-                self.visited_states.add((direction,new_state))
-                results.append((direction, new_state))
+            # if new_state not in self.visited_states:
+            #     self.visited_states.add(new_state)
+            results.append((direction, new_state))
 
             return results
         
@@ -202,9 +198,9 @@ class PressurePlateProblem(search.Problem):
                     # update all
                     new_state = ((one_move_row, one_move_col), tuple(sorted(key_blocks)), frozenset(open_doors), frozenset(plates_covered.items()))
                    
-                    if new_state not in self.visited_states:
-                        self.visited_states.add((direction,new_state))
-                        results.append((direction, new_state))
+                    # if new_state not in self.visited_states:
+                    #     self.visited_states.add(new_state)
+                    results.append((direction, new_state))
                     return results
 
         # case 3 - the agent push a "key block" and now it is on a pressure plates 
@@ -227,9 +223,9 @@ class PressurePlateProblem(search.Problem):
                     new_agent_placement = (one_move_row, one_move_col)
                     new_state = (new_agent_placement, tuple(sorted(key_blocks)), frozenset(open_doors),frozenset(plates_covered.items()))
                   
-                    if new_state not in self.visited_states:
-                        self.visited_states.add((direction, new_state))
-                        results.append((direction, new_state))
+                    # if new_state not in self.visited_states:
+                    #     self.visited_states.add(new_state)
+                    results.append((direction, new_state))
                     return results
                 
         return results

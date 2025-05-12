@@ -19,7 +19,6 @@ PRESSED_PLATES = list(range(30, 40))
 PRESSURE_PLATES = list(range(20, 30))
 KEY_BLOCKS = list(range(10, 20))
 
-
 # help with the drections
 DIRECTIONS = {
     "R": (0, 1),
@@ -81,10 +80,6 @@ class PressurePlateProblem(search.Problem):
         search.Problem.__init__(self, initial_state, goal=self.goal)
         print("📦 Initial state:", agent_placement, key_blocks, self.goal)
 
-#          (5,7) (5 ,6 ,3).....() , {} , {}   start
-#          (5,6) (5,5,3).......() {} {}      step 1
-#          (5,7) (5 ,6 ,3).....() , {} , {}
- 
 
     # this function is to keep the data i need
     def count_by_type(self, matrix, valid_range):
@@ -185,7 +180,7 @@ class PressurePlateProblem(search.Problem):
             new_state = (new_agent_placement, tuple(sorted(key_blocks)), frozenset(open_doors), frozenset(plates_covered.items()))
             
             if new_state not in self.visited_states:
-                self.visited_states.add((direction,new_state))
+                self.visited_states.add(new_state)
                 results.append((direction, new_state))
 
             return results
@@ -203,7 +198,7 @@ class PressurePlateProblem(search.Problem):
                     new_state = ((one_move_row, one_move_col), tuple(sorted(key_blocks)), frozenset(open_doors), frozenset(plates_covered.items()))
                    
                     if new_state not in self.visited_states:
-                        self.visited_states.add((direction,new_state))
+                        self.visited_states.add(new_state)
                         results.append((direction, new_state))
                     return results
 
@@ -228,7 +223,7 @@ class PressurePlateProblem(search.Problem):
                     new_state = (new_agent_placement, tuple(sorted(key_blocks)), frozenset(open_doors),frozenset(plates_covered.items()))
                   
                     if new_state not in self.visited_states:
-                        self.visited_states.add((direction, new_state))
+                        self.visited_states.add(new_state)
                         results.append((direction, new_state))
                     return results
                 
@@ -309,34 +304,47 @@ class PressurePlateProblem(search.Problem):
         # i want to check if agent is on goal
         return state[0] == self.goal
     
- 
-
-    # #     return manhattan + penalty
-    def h(self, node):
-        """Computes heuristic sum of agent to goal distance and block"""
-        agent_pos = node.state[0]
-        open_doors = node.state[2]
-    
-        # compute agent to goal distance
-        agent_to_goal = abs(agent_pos[0] - self.goal[0]) + abs(agent_pos[1] - self.goal[1])
-
-        # locked doors penalty
-        penalty = 0
-        penalty_per_door = 3  # <-- you can tune this value experimentally
-
-        for i, j , door_id in self.doors_info:
-            if door_id not in open_doors:
-                penalty += penalty_per_door
-
-        return agent_to_goal + penalty
     # def h(self, node):
-    #     """ This is the heuristic. It gets a node (not a state)
-    #     and returns a goal distance estimate"""
-    #     """Simple heuristic: Manhattan distance from agent to goal"""
     #     agent_pos = node.state[0]
-    #     goal_pos = self.goal
+    #     key_blocks = node.state[1]
+    #     plates_covered = dict(node.state[3])
 
-    #     return abs(agent_pos[0] - goal_pos[0]) + abs(agent_pos[1] - goal_pos[1])
+    #     # חלק 1: מרחק הסוכן למטרה
+    #     agent_to_goal = abs(agent_pos[0] - self.goal[0]) + abs(agent_pos[1] - self.goal[1])
+
+    #     # חלק 2: סכום מרחקי כל בלוק ללחצן המתאים הקרוב ביותר
+    #     block_to_plate_total = 0
+    #     for r, c, block_type in key_blocks:
+    #         if plates_covered.get(block_type, 0) >= self.pressure_plate_counts.get(block_type, 0):
+    #             continue  # כבר כל הלחצנים מהסוג הזה מכוסים
+    #         min_dist = float('inf')
+    #         for i, j, plate_type in self.plates_info:
+    #             if plate_type != block_type:
+    #                 continue
+    #             dist = abs(r - i) + abs(c - j)
+    #             if dist < min_dist:
+    #                 min_dist = dist
+    #         if min_dist < float('inf'):
+    #             block_to_plate_total += min_dist
+
+    #     return (agent_to_goal + block_to_plate_total)
+    def h(self, node):
+        agent_pos = node.state[0]
+        open_doors = set(node.state[2])
+
+        manhattan = abs(agent_pos[0] - self.goal[0]) + abs(agent_pos[1] - self.goal[1])
+        penalty = 0
+
+        # ענישה אם יש דלת נעולה בין agent ל-goal (בקו אופקי/אנכי פשוט)
+        for i, j, door_type in self.doors_info:
+            if door_type not in open_doors:
+                if (agent_pos[0] == self.goal[0] and min(agent_pos[1], self.goal[1]) <= j <= max(agent_pos[1], self.goal[1]) and i == agent_pos[0]) or \
+                (agent_pos[1] == self.goal[1] and min(agent_pos[0], self.goal[0]) <= i <= max(agent_pos[0], self.goal[0]) and j == agent_pos[1]):
+                    penalty += 5  # תעניש מעט אם יש דלת נעולה בקו ישר
+
+        return manhattan + penalty
+
+
 
 
 
@@ -347,4 +355,5 @@ def create_pressure_plate_problem(game):
     return PressurePlateProblem(game)
 
 if __name__ == '__main__':
+    # print("hiiiiiiiiiiiiiiiiii")
     ex1_check.main()
