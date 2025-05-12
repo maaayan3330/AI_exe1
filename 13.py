@@ -197,12 +197,11 @@ class PressurePlateProblem(search.Problem):
                 key_type = (map_for_state[one_move_row, one_move_col]) % 10
                 if (one_move_row, one_move_col, key_type) in key_blocks:
                     # remove the position of the old cube
-                    key_blocks.remove((one_move_row, one_move_col, key_type))
-                    # add it to the new position
-                    key_blocks.append((two_move_row, two_move_col, key_type))
-                    # update all
-                    new_state = ((one_move_row, one_move_col), tuple(sorted(key_blocks)), frozenset(open_doors), frozenset(plates_covered.items()))
-                   
+                    new_key_blocks = [b for b in key_blocks if b != (one_move_row, one_move_col, key_type)]
+                    new_key_blocks.append((two_move_row, two_move_col, key_type))
+                    new_key_blocks = tuple(sorted(new_key_blocks))
+
+                    new_state = ((one_move_row, one_move_col), new_key_blocks, frozenset(open_doors), frozenset(plates_covered.items()))
                     if new_state not in self.visited_states:
                         self.visited_states.add((direction,new_state))
                         results.append((direction, new_state))
@@ -224,9 +223,12 @@ class PressurePlateProblem(search.Problem):
                     if plates_covered[key_type] == self.pressure_plate_counts[key_type]:
                         open_doors.add(key_type)
                     # remove the placment of the cube becuse we did a move
-                    key_blocks.remove((one_move_row, one_move_col, key_type))
+                    new_key_blocks = [b for b in key_blocks if b != (one_move_row, one_move_col, key_type)]
+            # לא מוסיפים את הקובייה כי היא על הלחצן – היא לא נראית במפה יותר
+                    new_key_blocks = tuple(sorted(new_key_blocks))
+
                     new_agent_placement = (one_move_row, one_move_col)
-                    new_state = (new_agent_placement, tuple(sorted(key_blocks)), frozenset(open_doors),frozenset(plates_covered.items()))
+                    new_state = (new_agent_placement, new_key_blocks, frozenset(open_doors), frozenset(plates_covered.items()))
                   
                     if new_state not in self.visited_states:
                         self.visited_states.add((direction, new_state))

@@ -183,7 +183,7 @@ class PressurePlateProblem(search.Problem):
             # keep the new placment of the agen
             new_agent_placement = (one_move_row, one_move_col)
             # keep the all info about the "key blockes"
-            new_state = (new_agent_placement, state[1], frozenset(open_doors), frozenset(plates_covered.items()))
+            new_state = (new_agent_placement, tuple(sorted(key_blocks)), frozenset(open_doors), frozenset(plates_covered.items()))
             
             if new_state not in self.visited_states:
                 self.visited_states.add((direction,new_state))
