@@ -199,8 +199,7 @@ class PressurePlateProblem(search.Problem):
                 if (two_move_row, two_move_col) not in [(i, j) for i, j, _ in self.plates_info]:
                     def is_wall(y, x):
                         if 0 <= y < self.rows and 0 <= x < self.cols:
-                            type_key = map_for_state[one_move_row][two_move_row]
-                            return (map_for_state[y][x] == WALL) or ((map_for_state[y][x] in PRESSURE_PLATES) and (type_key != (map_for_state[y][x] % 10)))
+                            return map_for_state[y][x] == WALL
                         return True  # Treat out of bounds as wall
                     if (is_wall(two_move_row - 1, two_move_col) and is_wall(two_move_row, two_move_col - 1)):
                         return results  # top + left
