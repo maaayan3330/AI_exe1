@@ -224,7 +224,7 @@ class PressurePlateProblem(search.Problem):
                         open_doors.add(key_type)
                     # remove the placment of the cube becuse we did a move
                     new_key_blocks = [b for b in key_blocks if b != (one_move_row, one_move_col, key_type)]
-            # לא מוסיפים את הקובייה כי היא על הלחצן – היא לא נראית במפה יותר
+                    # לא מוסיפים את הקובייה כי היא על הלחצן – היא לא נראית במפה יותר
                     new_key_blocks = tuple(sorted(new_key_blocks))
 
                     new_agent_placement = (one_move_row, one_move_col)
