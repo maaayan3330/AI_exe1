@@ -298,7 +298,6 @@ class PressurePlateProblem(search.Problem):
     def dead_end_due_to_stuck_blocks(self, state, direction, new_map):
         row_of_agent , col_of_agent = state[0]
         direction_row, direction_col = DIRECTIONS[direction]
-        plates_covered = dict(state[3])
 
         one_move_row, one_move_col = row_of_agent + direction_row, col_of_agent + direction_col
         two_move_row, two_move_col = row_of_agent + 2 * direction_row, col_of_agent + 2 * direction_col
@@ -312,21 +311,22 @@ class PressurePlateProblem(search.Problem):
             # the next step is on floor
             if new_map[two_move_row][two_move_col] == FLOOR:
                 # and it will stack
-                if self.is_block_stuck(two_move_row, two_move_col, new_map):
+                type_key = new_map[one_move_row][one_move_col] % 10
+                if self.is_block_stuck(two_move_row, two_move_col, new_map, type_key):
                     # it will push a cune to a problem placmnebt - נבדוק שבאמת צריך את הקוביה
-                        return True
+                    return True
        
         return False
 
     # helper to case 6          
-    def is_block_stuck(self, r, c, new_map):
+    def is_block_stuck(self, r, c, new_map, type_key):
         # If block is on a pressure plate, it's not stuck
         if (r, c) in [(i, j) for i, j, _ in self.plates_info]:
             return False
 
         def is_wall(y, x):
             if 0 <= y < self.rows and 0 <= x < self.cols:
-                return new_map[y][x] == WALL
+                return (new_map[y][x] == WALL) or ((new_map[y][x] in PRESSURE_PLATES) and (new_map[y][x] % 10 ) != type_key)
             return True  # out of bounds is treated as wall
 
         # Check adjacent corner pairs
