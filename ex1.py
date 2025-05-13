@@ -196,8 +196,18 @@ class PressurePlateProblem(search.Problem):
             # the next step is on floor
             if map_for_state[two_move_row][two_move_col] == FLOOR:
                 # and it will stack
-                if self.is_block_stuck(two_move_row, two_move_col, map_for_state):
-                    # it will push a cune to a problem placmnebt - נבדוק שבאמת צריך את הקוביה
+                if (two_move_row, two_move_col) not in [(i, j) for i, j, _ in self.plates_info]:
+                    def is_wall(y, x):
+                        if 0 <= y < self.rows and 0 <= x < self.cols:
+                            return map_for_state[y][x] == WALL
+                        return True  # Treat out of bounds as wall
+                    if (is_wall(two_move_row - 1, two_move_col) and is_wall(two_move_row, two_move_col - 1)):
+                        return results  # top + left
+                    if (is_wall(two_move_row - 1, two_move_col) and is_wall(two_move_row, two_move_col + 1)):
+                        return results  # top + right
+                    if (is_wall(two_move_row + 1, two_move_col) and is_wall(two_move_row, two_move_col - 1)):
+                        return results  # bottom + left
+                    if (is_wall(two_move_row + 1, two_move_col) and is_wall(two_move_row, two_move_col + 1)):
                         return results
 
         # check now for good cases to insert to the states :
@@ -264,120 +274,6 @@ class PressurePlateProblem(search.Problem):
 
 
         ##################################### תחשבי אם כיסת את המצב של אםם זה אזור לחוץ כבר
-   
-    # helpper functions for helper seccessor
-    # case 1
-    # def out_of_boundry(self, state, direction):
-    #     row_of_agent , col_of_agent = state[0]
-    #     direction_row, direction_col = DIRECTIONS[direction]
-    #     new_row = row_of_agent + direction_row
-    #     new_col = col_of_agent + direction_col
-
-    #     return 0 <= new_row < self.rows and 0 <= new_col < self.cols
-   
-    # # case 2
-    # def next_move_wall(self, state, direction, new_map):
-    #     row_of_agent , col_of_agent = state[0]
-    #     direction_row, direction_col = DIRECTIONS[direction]
-    #     return new_map[row_of_agent + direction_row][col_of_agent + direction_col] == WALL
-
-    # case 3
-    # def next_move_pressure_plates(self, state, direction, new_map):
-    #     row_of_agent , col_of_agent = state[0]
-    #     direction_row, direction_col = DIRECTIONS[direction]
-    #     return new_map[row_of_agent + direction_row][col_of_agent + direction_col] in PRESSURE_PLATES
-
-    # # case 4
-    # def push_block_invalid(self, state, direction, new_map):
-    #     row_of_agent , col_of_agent = state[0]
-    #     direction_row, direction_col = DIRECTIONS[direction]
-
-    #     one_move_row, one_move_col = row_of_agent + direction_row, col_of_agent + direction_col
-    #     two_move_row, two_move_col = row_of_agent + 2 * direction_row, col_of_agent + 2 * direction_col
-
-    #     # first check if the move push a cube - so if in the other plate there is a key!
-    #     if new_map[one_move_row][one_move_col] in KEY_BLOCKS:
-    #         # now there is a cube - first check if the placement after it is in the bounderis
-    #         if not (0 <= two_move_row < self.rows and 0 <= two_move_col < self.cols):
-    #             # the next step is out of bounderies for ROW and COL
-    #             return True
-    #         # so it is in boundry - check if there is a cube after it - 2 cube in a row cannot
-    #         if new_map[two_move_row][two_move_col] in KEY_BLOCKS:
-    #             return True
-    #         # check if there is a wall after it
-    #         if new_map[two_move_row][two_move_col] ==  WALL:
-    #             return True
-    #         # check if we push the cube to a wrong pressure
-    #         if new_map[two_move_row][two_move_col] in PRESSURE_PLATES:
-    #             plate_pressure = new_map[two_move_row][two_move_col]
-    #             key_block = new_map[one_move_row][one_move_col]
-    #             if (plate_pressure % 10) != (key_block % 10):
-    #                 # they have diffrent numbers
-    #                 return True
-    #     # it is all good
-    #     return False
-
-    # case 5
-    # def locked_door(self, state, direction, new_map):
-    #     row_of_agent , col_of_agent = state[0]
-    #     direction_row, direction_col = DIRECTIONS[direction]
-
-    #     cell = new_map[row_of_agent + direction_row][col_of_agent + direction_col]
-    #     open_doors = state[2]
-
-    #     # try to enter a door and it locked - not in open doors
-    #     if cell in LOCKED_DOORS and (cell % 10) not in open_doors:
-    #         return True
-    #     return False
-
-    # # case 6
-    # def dead_end_due_to_stuck_blocks(self, state, direction, new_map):
-    #     row_of_agent , col_of_agent = state[0]
-    #     direction_row, direction_col = DIRECTIONS[direction]
-    #     plates_covered = dict(state[3])
-
-    #     one_move_row, one_move_col = row_of_agent + direction_row, col_of_agent + direction_col
-    #     two_move_row, two_move_col = row_of_agent + 2 * direction_row, col_of_agent + 2 * direction_col
-
-    #     # first check if the move push a cube - so if in the other plate there is a key!
-    #     if new_map[one_move_row][one_move_col] in KEY_BLOCKS:
-    #         # now there is a cube - first check if the placement after it is in the bounderis
-    #         if not (0 <= two_move_row < self.rows and 0 <= two_move_col < self.cols):
-    #             # the next step is out of bounderies for ROW and COL
-    #             return True
-    #         # the next step is on floor
-    #         if new_map[two_move_row][two_move_col] == FLOOR:
-    #             # and it will stack
-    #             if self.is_block_stuck(two_move_row, two_move_col, new_map):
-    #                 # it will push a cune to a problem placmnebt - נבדוק שבאמת צריך את הקוביה
-    #                     return True
-       
-    #     return False
-
-    # helper to case 6          
-    def is_block_stuck(self, r, c, new_map):
-        # If block is on a pressure plate, it's not stuck
-        if (r, c) in [(i, j) for i, j, _ in self.plates_info]:
-            return False
-
-        def is_wall(y, x):
-            if 0 <= y < self.rows and 0 <= x < self.cols:
-                return new_map[y][x] == WALL
-            return True  # out of bounds is treated as wall
-
-        # Check adjacent corner pairs
-        if (is_wall(r-1, c) and is_wall(r, c-1)):  # up + left
-            return True
-        if (is_wall(r-1, c) and is_wall(r, c+1)):  # up + right
-            return True
-        if (is_wall(r+1, c) and is_wall(r, c-1)):  # down + left
-            return True
-        if (is_wall(r+1, c) and is_wall(r, c+1)):  # down + right
-            return True
-
-        return False  # Not stuck
-
-   
     def goal_test(self, state):
         """ given a state, checks if this is the goal state, compares to the created goal state returns True/False"""
         # i want to check if agent is on goal
