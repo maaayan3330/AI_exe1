@@ -169,6 +169,8 @@ class PressurePlateProblem(search.Problem):
         if self.dead_end_due_to_stuck_blocks(state, direction, map_for_state):
             return results
         # ###############################################################
+        if self.hallway_to_dead_end(state, direction, map_for_state):
+            return results
        
 
         # check now for good cases to insert to the states :
@@ -307,6 +309,7 @@ class PressurePlateProblem(search.Problem):
             return True
         return False
 
+    # case 6
     def dead_end_due_to_stuck_blocks(self, state, direction, new_map):
         row_of_agent , col_of_agent = state[0]
         direction_row, direction_col = DIRECTIONS[direction]
@@ -326,17 +329,11 @@ class PressurePlateProblem(search.Problem):
                 # and it will stack
                 if self.is_block_stuck(two_move_row, two_move_col, new_map):
                     # it will push a cune to a problem placmnebt - נבדוק שבאמת צריך את הקוביה
-                    # type_cube = new_map[one_move_row][one_move_col] % 10
-                    # how_much_pressed = plates_covered.get(type_cube, 0)
-                    # how_much_need = self.pressure_plate_counts.get(type_cube, 0)
-                    # if 1 <= how_much_pressed < how_much_need:
                         return True
        
         return False
 
-               
-
-   
+    # helper to case 6          
     def is_block_stuck(self, r, c, new_map):
         # If block is on a pressure plate, it's not stuck
         if (r, c) in [(i, j) for i, j, _ in self.plates_info]:
@@ -359,6 +356,51 @@ class PressurePlateProblem(search.Problem):
 
         return False  # Not stuck
 
+    # case 7
+    def hallway_to_dead_end(self, state, direction, new_map):
+        row_of_agent , col_of_agent = state[0]
+        direction_row, direction_col = DIRECTIONS[direction]
+
+        one_move_row, one_move_col = row_of_agent + direction_row, col_of_agent + direction_col
+        two_move_row, two_move_col = row_of_agent + 2 * direction_row, col_of_agent + 2 * direction_col
+        three_move_row, three_move_col = row_of_agent + 3 * direction_row, col_of_agent + 3 * direction_col
+
+        # first check if the move push a cube - so if in the other plate there is a key!
+        if new_map[one_move_row][one_move_col] in KEY_BLOCKS:
+            # now there is a cube - first check if the placement after it is in the bounderis
+            if not (0 <= two_move_row < self.rows and 0 <= two_move_col < self.cols):
+                # the next step is out of bounderies for ROW and COL
+                return True
+            if not (0 <= three_move_row < self.rows and 0 <= three_move_col < self.cols):
+                # the next step is out of bounderies for ROW and COL
+                return True
+            # the next step is on floor
+            if (new_map[two_move_row][two_move_col] == FLOOR) and (new_map[three_move_row][three_move_col] == FLOOR) :
+                # and it will stack
+                if self.is_block_stuck(three_move_row, three_move_col, new_map) and self.is_block_stuck_2_PLUS(two_move_row, two_move_col, new_map):
+                    # it will push a cune to a problem placmnebt - נבדוק שבאמת צריך את הקוביה
+        
+                    return True
+        
+        return False
+
+    def is_block_stuck_2_PLUS(self, r, c, new_map):
+        # אם הקובייה על לחצן – היא לא תקועה
+        if (r, c) in [(i, j) for i, j, _ in self.plates_info]:
+            return False
+
+        walls = 0
+        for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            nr, nc = r + dr, c + dc
+
+            # בדיקה שלא חורג מגבולות המפה
+            if 0 <= nr < self.rows and 0 <= nc < self.cols:
+                if new_map[nr][nc] == WALL:
+                    walls += 1
+            else:
+                walls += 1  # מחוץ למפה = קיר
+
+        return walls >= 2  # פינה אם יש לפחות שני קירות
 
     def goal_test(self, state):
         """ given a state, checks if this is the goal state, compares to the created goal state returns True/False"""
