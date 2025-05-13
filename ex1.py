@@ -165,10 +165,10 @@ class PressurePlateProblem(search.Problem):
         if self.locked_door(state, direction, map_for_state):
             return results
         
-        # ##############################################################
+        ##############################################################
         if self.dead_end_due_to_stuck_blocks(state, direction, map_for_state):
             return results
-        # ###############################################################
+        ###############################################################
         
 
         # check now for good cases to insert to the states :
@@ -345,7 +345,7 @@ class PressurePlateProblem(search.Problem):
         walls = 0
         for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
             nr, nc = r + dr, c + dc
-
+            
             # בדיקה שלא חורג מגבולות המפה
             if 0 <= nr < self.rows and 0 <= nc < self.cols:
                 if new_map[nr][nc] == WALL:
