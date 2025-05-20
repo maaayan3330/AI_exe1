@@ -60,7 +60,6 @@ class PressurePlateProblem(search.Problem):
                 # i will keep the goal for later
                 if placement == GOAL:
                     self.goal = (i,j)
-                    # print("that the goal",self.goal)
                 if placement in LOCKED_DOORS:
                     self.doors_info.append((i,j,placement % 10))
                 if placement in PRESSURE_PLATES:
