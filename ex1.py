@@ -27,6 +27,8 @@ DIRECTIONS = {
     "U": (-1, 0),
     "D": (1, 0)
 }
+# this is the best till now
+
 
 class PressurePlateProblem(search.Problem):
     """This class implements a pressure plate problem"""
@@ -40,10 +42,9 @@ class PressurePlateProblem(search.Problem):
         self.goal = None
         self.visited_states = set()
         self.base_map = [list(row) for row in initial]
-        ########## # {i,j, type} ###########
-        self.doors_info = []  
-        self.plates_info = []
-        #######################
+        # {(i,j): type}
+        self.doors_info = []   
+        self.plates_info = []  
         # I want to pass the constructor not the all netrix just the - initial stats
         agent_placement = None
         key_blocks = []
@@ -59,6 +60,7 @@ class PressurePlateProblem(search.Problem):
                 # i will keep the goal for later
                 if placement == GOAL:
                     self.goal = (i,j)
+                    # print("that the goal",self.goal)
                 if placement in LOCKED_DOORS:
                     self.doors_info.append((i,j,placement % 10))
                 if placement in PRESSURE_PLATES:
@@ -68,8 +70,8 @@ class PressurePlateProblem(search.Problem):
         self.cols = len(self.map[0])
         # keep the num of "pressure plates"
         self.pressure_plate_counts = self.count_by_type(self.map, PRESSURE_PLATES)
-        # so far I just collect the all informetion and now i will add it to states - frozenset - no open door in the beging , plated coverd
-        initial_state = (agent_placement, tuple(sorted(key_blocks)), frozenset(), frozenset())
+        # so far I just collect the all informetion and now i will add it to states - frozenset - no open door in the beging , plated coverd,pressed_positions
+        initial_state = (agent_placement, tuple(sorted(key_blocks)), frozenset(), frozenset(),frozenset())
         # note - I keep the first item in the initial_state to be = the agent = state[0]
         search.Problem.__init__(self, initial_state, goal=self.goal)
 
@@ -86,29 +88,26 @@ class PressurePlateProblem(search.Problem):
 
     # to copy to each state the map that relevnt for him
     def get_effective_map(self, state):
-        # get the num of pressed
-        pressed = dict(state[3])
-        required = self.pressure_plate_counts
         key_blocks = list(state[1])
         open_doors = set(state[2])
+        pressed_positions = set(state[4])
 
         map_copy = [list(row) for row in self.base_map]
-        # update the doors that are open to floor
+     
         for i, j, t in self.doors_info:
             if t in open_doors:
                 map_copy[i][j] = FLOOR
 
-        # if we pressed enoght it become a wall
         for i, j, t in self.plates_info:
-            if pressed.get(t, 0) == required.get(t, 0):
+            if (i, j) in pressed_positions:
                 map_copy[i][j] = WALL
+        
+        for r, c, t in key_blocks:
+            map_copy[r][c] = 10 + t
 
         # update the new one place of the agent
         rowA , colA = state[0]
         map_copy[rowA][colA] = AGENT
-        # update the all key blockes new placne ment
-        for r, c, t in key_blocks:
-            map_copy[r][c] = 10 + t
 
         return map_copy
    
@@ -131,6 +130,7 @@ class PressurePlateProblem(search.Problem):
        
         # the corrent map
         map_for_state = self.get_effective_map(state)
+   
         ##### check for wrong cases - for better time run : #####
         # case 2 - if the next step of the agent is to wall
         if self.next_move_wall(state, direction, map_for_state):
@@ -145,7 +145,8 @@ class PressurePlateProblem(search.Problem):
         # case 5 - if the agent next stop is to a locked door
         if self.locked_door(state, direction, map_for_state):
             return results
-        # ##############################################################
+       
+        # case 6 - corner
         if self.dead_end_due_to_stuck_blocks(state, direction, map_for_state):
             return results
 
@@ -155,16 +156,19 @@ class PressurePlateProblem(search.Problem):
         key_blocks = list(state[1])
         open_doors = set(state[2])
         plates_covered = dict(state[3])
+        pressed_positions = set(state[4])
 
         one_move_row, one_move_col = row_of_agent + direction_row, col_of_agent + direction_col
         two_move_row, two_move_col = row_of_agent + 2 * direction_row, col_of_agent + 2 * direction_col
+
 
         # case 1 - the agent want to move to an empty place
         if map_for_state[one_move_row][one_move_col] in [FLOOR, GOAL]:
             # keep the new placment of the agen
             new_agent_placement = (one_move_row, one_move_col)
             # keep the all info about the "key blockes"
-            new_state = (new_agent_placement, tuple(sorted(key_blocks)), frozenset(open_doors), frozenset(plates_covered.items()))
+            new_state = (new_agent_placement, tuple(sorted(key_blocks)), frozenset(open_doors),
+                          frozenset(plates_covered.items()),frozenset(pressed_positions))
            
             if (direction,new_state) not in self.visited_states:
                 self.visited_states.add((direction,new_state))
@@ -182,7 +186,8 @@ class PressurePlateProblem(search.Problem):
                     # add it to the new position
                     key_blocks.append((two_move_row, two_move_col, key_type))
                     # update all
-                    new_state = ((one_move_row, one_move_col), tuple(sorted(key_blocks)), frozenset(open_doors), frozenset(plates_covered.items()))
+                    new_state = ((one_move_row, one_move_col), tuple(sorted(key_blocks)),
+                                  frozenset(open_doors), frozenset(plates_covered.items()),frozenset(pressed_positions))
                    
                     if (direction,new_state) not in self.visited_states:
                         self.visited_states.add((direction,new_state))
@@ -206,8 +211,10 @@ class PressurePlateProblem(search.Problem):
                         open_doors.add(key_type)
                     # remove the placment of the cube becuse we did a move
                     key_blocks.remove((one_move_row, one_move_col, key_type))
+                    pressed_positions.add((two_move_row, two_move_col))
                     new_agent_placement = (one_move_row, one_move_col)
-                    new_state = (new_agent_placement, tuple(sorted(key_blocks)), frozenset(open_doors),frozenset(plates_covered.items()))
+                    new_state = (new_agent_placement, tuple(sorted(key_blocks)),
+                                  frozenset(open_doors),frozenset(plates_covered.items()),frozenset(pressed_positions))
                  
                     if (direction,new_state) not in self.visited_states:
                         self.visited_states.add((direction, new_state))
@@ -216,6 +223,7 @@ class PressurePlateProblem(search.Problem):
                
         return results
 
+   
     # helpper functions for helper seccessor
     # case 1
     def out_of_boundry(self, state, direction):
@@ -265,11 +273,6 @@ class PressurePlateProblem(search.Problem):
                 if (plate_pressure % 10) != (key_block % 10):
                     # they have diffrent numbers
                     return True
-            # check if the situation is - cube to locked door
-            open_doors = state[2]
-            cell = new_map[two_move_row][two_move_col]
-            if cell in LOCKED_DOORS and (cell % 10) not in open_doors:
-                return True
         # it is all good
         return False
 
@@ -351,7 +354,7 @@ class PressurePlateProblem(search.Problem):
 
         # locked doors penalty
         penalty = 0
-        penalty_per_door = 6  
+        penalty_per_door = 6  # <-- you can tune this value experimentally
 
         for i, j , door_id in self.doors_info:
             if door_id not in open_doors:
