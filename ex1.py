@@ -27,7 +27,6 @@ DIRECTIONS = {
     "U": (-1, 0),
     "D": (1, 0)
 }
-# this is the best till now
 
 
 class PressurePlateProblem(search.Problem):
@@ -272,6 +271,11 @@ class PressurePlateProblem(search.Problem):
                 if (plate_pressure % 10) != (key_block % 10):
                     # they have diffrent numbers
                     return True
+            # check if the next we push a cube to a locked door
+            cell = new_map[two_move_row][two_move_col]
+            open_doors = state[2]
+            if cell in LOCKED_DOORS and (cell % 10) not in open_doors:
+                return True
         # it is all good
         return False
 
