@@ -308,7 +308,7 @@ class PressurePlateProblem(search.Problem):
                 # and it will stack
                 type_key = new_map[one_move_row][one_move_col] % 10
                 if self.is_block_stuck(two_move_row, two_move_col, new_map, type_key):
-                    # it will push a cune to a problem placmnebt - נבדוק שבאמת צריך את הקוביה
+                    # it will push a cune to a problem placmnebt
                     return True
        
         return False
@@ -325,16 +325,16 @@ class PressurePlateProblem(search.Problem):
             return True  # out of bounds is treated as wall
 
         # Check adjacent corner pairs
-        if (is_wall(r-1, c) and is_wall(r, c-1)):  # up + left
+        if (is_wall(r-1, c) and is_wall(r, c-1)): 
             return True
-        if (is_wall(r-1, c) and is_wall(r, c+1)):  # up + right
+        if (is_wall(r-1, c) and is_wall(r, c+1)): 
             return True
-        if (is_wall(r+1, c) and is_wall(r, c-1)):  # down + left
+        if (is_wall(r+1, c) and is_wall(r, c-1)): 
             return True
-        if (is_wall(r+1, c) and is_wall(r, c+1)):  # down + right
+        if (is_wall(r+1, c) and is_wall(r, c+1)):  
             return True
 
-        return False  # Not stuck
+        return False 
 
    
     def goal_test(self, state):
@@ -343,7 +343,7 @@ class PressurePlateProblem(search.Problem):
         return state[0] == self.goal
    
 
-    # #     return manhattan + penalty
+    # # return manhattan + penalty
     def h(self, node):
         """Computes heuristic sum of agent to goal distance and block"""
         agent_pos = node.state[0]
@@ -354,8 +354,7 @@ class PressurePlateProblem(search.Problem):
 
         # locked doors penalty
         penalty = 0
-        penalty_per_door = 6  # <-- you can tune this value experimentally
-
+        penalty_per_door = 6 
         for i, j , door_id in self.doors_info:
             if door_id not in open_doors:
                 penalty += penalty_per_door
