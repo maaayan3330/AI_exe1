@@ -278,6 +278,11 @@ class PressurePlateProblem(search.Problem):
                 if (plate_pressure % 10) != (key_block % 10):
                     # they have diffrent numbers
                     return True
+            # check if the situation is - cube to locked door
+            open_doors = state[2]
+            cell = new_map[two_move_row][two_move_col]
+            if cell in LOCKED_DOORS and (cell % 10) not in open_doors:
+                return True
         # it is all good
         return False
 
