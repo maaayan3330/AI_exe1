@@ -216,9 +216,6 @@ class PressurePlateProblem(search.Problem):
                
         return results
 
-
-        ##################################### תחשבי אם כיסת את המצב של אםם זה אזור לחוץ כבר
-   
     # helpper functions for helper seccessor
     # case 1
     def out_of_boundry(self, state, direction):
@@ -354,7 +351,7 @@ class PressurePlateProblem(search.Problem):
 
         # locked doors penalty
         penalty = 0
-        penalty_per_door = 6  # <-- you can tune this value experimentally
+        penalty_per_door = 6  
 
         for i, j , door_id in self.doors_info:
             if door_id not in open_doors:
