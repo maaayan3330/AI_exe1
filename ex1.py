@@ -2,7 +2,7 @@ import ex1_check
 import search
 import utils
 
-id = ["No numbers - I'm special!"]
+id = ["212437453"]
 
 """ Rules """
 BLANK = 0
