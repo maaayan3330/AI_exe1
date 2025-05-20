@@ -27,8 +27,6 @@ DIRECTIONS = {
     "U": (-1, 0),
     "D": (1, 0)
 }
-# this is the best till now
-
 
 class PressurePlateProblem(search.Problem):
     """This class implements a pressure plate problem"""
@@ -40,13 +38,12 @@ class PressurePlateProblem(search.Problem):
         # initial - the all metrix
         self.map = initial
         self.goal = None
-        ##############################################################################################
         self.visited_states = set()
-        ############################################################################################
         self.base_map = [list(row) for row in initial]
-        ###################################################################################
-        self.doors_info = []   # {(i,j): type}
-        self.plates_info = []  # {(i,j): type}
+        ########## # {i,j, type} ###########
+        self.doors_info = []  
+        self.plates_info = []
+        #######################
         # I want to pass the constructor not the all netrix just the - initial stats
         agent_placement = None
         key_blocks = []
@@ -62,7 +59,6 @@ class PressurePlateProblem(search.Problem):
                 # i will keep the goal for later
                 if placement == GOAL:
                     self.goal = (i,j)
-                    # print("that the goal",self.goal)
                 if placement in LOCKED_DOORS:
                     self.doors_info.append((i,j,placement % 10))
                 if placement in PRESSURE_PLATES:
@@ -75,7 +71,6 @@ class PressurePlateProblem(search.Problem):
         # so far I just collect the all informetion and now i will add it to states - frozenset - no open door in the beging , plated coverd
         initial_state = (agent_placement, tuple(sorted(key_blocks)), frozenset(), frozenset())
         # note - I keep the first item in the initial_state to be = the agent = state[0]
-        # print("📦 Initial state:", agent_placement, key_blocks, self.goal)
         search.Problem.__init__(self, initial_state, goal=self.goal)
 
 
@@ -98,12 +93,12 @@ class PressurePlateProblem(search.Problem):
         open_doors = set(state[2])
 
         map_copy = [list(row) for row in self.base_map]
-        # פתיחת דלתות לפי הדלתות שאמורות להיות פתוחות כרגע
+        # update the doors that are open to floor
         for i, j, t in self.doors_info:
             if t in open_doors:
                 map_copy[i][j] = FLOOR
 
-        # הפיכת לחצנים ללחצנים שנלחצו במלואם (מומר ל־WALL)
+        # if we pressed enoght it become a wall
         for i, j, t in self.plates_info:
             if pressed.get(t, 0) == required.get(t, 0):
                 map_copy[i][j] = WALL
@@ -121,7 +116,6 @@ class PressurePlateProblem(search.Problem):
     def successor(self, state):
         """ Generates the successor states returns [(action, achieved_states, ...)]"""
         # first thing - check for every UP DOWN LEFT RIGHT the all possible situtions
-     
         new_states = []
         for direction in ["R", "L", "U", "D"]:
             possible_moves = self.helper_successor(state, direction)
@@ -137,8 +131,6 @@ class PressurePlateProblem(search.Problem):
        
         # the corrent map
         map_for_state = self.get_effective_map(state)
-       
-   
         ##### check for wrong cases - for better time run : #####
         # case 2 - if the next step of the agent is to wall
         if self.next_move_wall(state, direction, map_for_state):
@@ -153,7 +145,6 @@ class PressurePlateProblem(search.Problem):
         # case 5 - if the agent next stop is to a locked door
         if self.locked_door(state, direction, map_for_state):
             return results
-       
         # ##############################################################
         if self.dead_end_due_to_stuck_blocks(state, direction, map_for_state):
             return results
@@ -167,7 +158,6 @@ class PressurePlateProblem(search.Problem):
 
         one_move_row, one_move_col = row_of_agent + direction_row, col_of_agent + direction_col
         two_move_row, two_move_col = row_of_agent + 2 * direction_row, col_of_agent + 2 * direction_col
-
 
         # case 1 - the agent want to move to an empty place
         if map_for_state[one_move_row][one_move_col] in [FLOOR, GOAL]:
