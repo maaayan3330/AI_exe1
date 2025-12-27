@@ -2,8 +2,6 @@ import ex1_check
 import search
 import utils
 
-id = ["212437453"]
-
 """ Rules """
 BLANK = 0
 WALL = 99
