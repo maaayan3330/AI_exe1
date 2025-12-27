@@ -1,0 +1,1 @@
+Developed intelligent agent to solve the Sokoban: puzzle a pressure-plate game requiring door/key logic and spatial reasoning. Implemented A* and Greedy Best-First Search (GBFS) with a custom heuristic combining Manhattan distance and door penalties. Demonstrated strong understanding of state-space search, heuristic design, and goal-oriented planning.
