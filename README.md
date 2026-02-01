@@ -3,8 +3,8 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Language-Python-blue" />
   <img src="https://img.shields.io/badge/AI-Search%20Algorithms-purple" />
-  <img src="https://img.shields.io/badge/Algorithm-A*-orange" />
-  <img src="https://img.shields.io/badge/Heuristics-Custom-success" />
+  <img src="https://img.shields.io/badge/Algorithms-A*%20%7C%20GBFS-orange" />
+  <img src="https://img.shields.io/badge/Heuristic-Manhattan%20Distance-success" />
 </p>
 
 An intelligent agent developed to solve a Sokoban-style pressure-plate puzzle.
