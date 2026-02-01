@@ -1,4 +1,4 @@
-# Intelligent Agent for Sokoban / Pressure-Plate Puzzle
+# 🤖 Intelligent Agent for Sokoban / Pressure-Plate Puzzle
 
 <p align="center">
   <img src="https://img.shields.io/badge/Language-Python-blue" />
